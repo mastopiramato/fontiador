@@ -143,8 +143,12 @@ jobs:
       - name: Calcular sumas de verificacion
         run: |
           cd artefactos
+          # Ojo con las rutas: los archivos se descargan en subcarpetas (linux/,
+          # windows/), pero al publicarlos quedan sueltos en la release. Si la
+          # lista conserva el prefijo, despues "sha256sum -c" no encuentra los
+          # archivos. Por eso se deja solo el nombre de archivo.
           find . -type f \( -name '*.exe' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' \) \
-            -exec sha256sum {} \; | sed 's|  \./|  |' > SHA256SUMS
+            -exec sha256sum {} \; | sed 's|^\([0-9a-f]*\)  \./\?.*/|\1  |' > SHA256SUMS
           cat SHA256SUMS
 
       # La etiqueta ya tiene una release publicada, así que este paso tiene que
