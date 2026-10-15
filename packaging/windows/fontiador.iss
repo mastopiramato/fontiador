@@ -11,7 +11,7 @@
 ; inbox/ y output/ dentro de su propia instalación.
 
 #define MiAppName    "Fontiador"
-#define MiVersion    "0.3.0"
+#define MiVersion    "0.3.1"
 #define MiPublisher  "mastopiramato"
 #define MiUrl        "https://github.com/mastopiramato/fontiador"
 #define MiExeName    "Fontiador.exe"

@@ -4,7 +4,23 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿﻿﻿﻿﻿﻿## [0.3.0] — 2026-10-16
+﻿﻿﻿﻿﻿﻿﻿﻿## [0.3.1] — 2026-10-16
+
+### Corregido
+
+- **Ajustes** en Dimensiones: el candado y los botones van arriba, y debajo los
+  cinco deslizadores en dos columnas, sin ningún elemento a todo el ancho.
+- **Trazado del pincel**: *Tolerancia de curva* ocupa media columna, como los
+  demás, en vez de todo el ancho.
+- Se eliminó el **scroll interno** de las pestañas: cada pestaña muestra todo su
+  contenido sin barra propia. Sólo se ajusta el alto del previsualizador para que
+  no empuje la caja de controles.
+
+Nota: en la 0.3.0 yo había introducido cambios de layout que no se pidieron
+(grilla horizontal en Ajustes, contenedor con scroll, Tolerancia a todo el ancho).
+Esta versión los revierte a lo pedido.
+
+## [0.3.0] — 2026-10-16
 
 ### Cambiado
 
