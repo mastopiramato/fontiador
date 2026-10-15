@@ -1187,6 +1187,9 @@ nav{width:200px;background:var(--panel);border-right:1px solid var(--line);paddi
 nav h1{font-size:1.2em;margin:.2em .4em 1em}
 nav button{background:none;color:var(--text);border:0;text-align:left;padding:.6em .8em;border-radius:6px;cursor:pointer;font-size:.95em}
 nav button.active,nav button:hover{background:#333}
+#navAyuda{margin-top:auto;font-size:.76em;color:var(--muted);line-height:1.5}
+#navAyuda b{color:#bbb;font-weight:600}
+kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;border-radius:4px;padding:0 .3em;font-family:ui-monospace,Consolas,monospace;font-size:.92em;color:#ddd}
 main{flex:1;overflow:auto;padding:1.2em 1.6em}
 section{display:none} section.active{display:block}
 h2{font-size:1.1em;margin:.2em 0 .8em}
@@ -1286,6 +1289,11 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 <button data-tab="font">Fuente</button>
 <button data-tab="log">Registro</button>
 <p class="muted" style="margin-top:auto" id="navcount"></p>
+<p id="navAyuda">
+  <kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> recorren<br>
+  <kbd class="tecla">Ctrl</kbd>+<kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> cambian de sección<br>
+  <kbd class="tecla">?</kbd> abre el tutorial
+</p>
 </nav>
 <main>
 
@@ -3611,11 +3619,8 @@ document.querySelectorAll('nav button[data-tab]').forEach(btn => {
 tourMountButtons();
 if ($('tourReset')) $('tourReset').onclick = tourReset;
 
-/* La sección que ya está abierta al cargar tampoco se "cliquea": lanzarla también. */
-(function(){
-  const active = document.querySelector('nav button[data-tab].active');
-  if (active) tourMaybeAuto(active.dataset.tab);
-})();
+/* El aviso automático de la sección abierta se lanza más abajo, después de
+   cargar los textos del tutorial: antes de eso no hay nada que mostrar. */
 
 /* Inicio e Importaciones son la misma pantalla. Se instala al final para pisar
    el manejador general de pestañas. */
@@ -3633,8 +3638,57 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
     if (caja) caja.scrollTop = 0;
   };
   window.fontiadorIrA = irA;
+
+  /* El orden de las secciones se toma del propio menú: agregar una pestaña
+     nueva alcanza para que las flechas la incluyan. */
+  const orden = [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab);
+  const seccionActual = () => {
+    const a = document.querySelector('nav button[data-tab].active');
+    return a ? a.dataset.tab : orden[0];
+  };
+  window.fontiadorSeccionActual = seccionActual;
+
   const inicio = document.querySelector('nav button[data-tab="imp"]');
   if (inicio) inicio.onclick = () => irA('imp');
+
+  /* Moverse entre secciones con Ctrl (o Alt) + flecha, desde cualquier lado.
+     Se usa el modificador para no pisar las flechas, que sirven para moverse
+     dentro de cada sección (la rejilla de caracteres, el asistente de kerning). */
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.altKey || e.metaKey)) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    if (typeof TOUR !== 'undefined' && TOUR.active) return;   // manda el tutorial
+    e.preventDefault();
+    const i = orden.indexOf(seccionActual());
+    let paso = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+    irA(orden[(i + paso + orden.length) % orden.length]);
+  });
+
+  /* "?" abre el tutorial de la sección, en cualquier momento. */
+  document.addEventListener('keydown', e => {
+    if (e.key !== '?' || e.ctrlKey || e.altKey || e.metaKey) return;
+    const el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
+    if (typeof TOUR !== 'undefined' && TOUR.active) return;
+    e.preventDefault();
+    if (typeof tourReplay === 'function') tourReplay();
+  });
+
+  /* Los accesos de Inicio también responden a Enter y a la barra espaciadora. */
+  document.querySelectorAll('#impAccesos .acceso').forEach(b => {
+    b.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); b.click(); }
+    };
+  });
+
+  /* Se dejan los textos del tutorial cargados desde el arranque: si no, la tecla
+     "?" y el aviso automático no encuentran nada con qué armar el tutorial. */
+  if (typeof cargarTutorial === 'function'){
+    cargarTutorial().then(() => { if (typeof tourMaybeAuto === 'function'){
+      const a = document.querySelector('nav button[data-tab].active');
+      if (a) tourMaybeAuto(a.dataset.tab);
+    }});
+  }
 })();
 </script></body></html>
 """

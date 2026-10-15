@@ -79,7 +79,25 @@ tu sistema.
 6. **Reconstruí** la fuente en la pestaña *Fuente*. El `.otf` queda en `output/`.
 
 Cada sección muestra un tutorial la primera vez que la abrís, y podés repetirlo
-con el botón **?** de la esquina.
+con el botón **?** de la esquina, o con la tecla <kbd>?</kbd> en cualquier
+momento.
+
+### Teclado
+
+| Teclas | Qué hace |
+|---|---|
+| <kbd>←</kbd> <kbd>→</kbd> | Recorren lo que estés usando: la rejilla de caracteres, el asistente de kerning, los valores |
+| <kbd>Ctrl</kbd> + <kbd>←</kbd> / <kbd>→</kbd> | Cambian de sección desde cualquier lado (también sirve <kbd>Alt</kbd>) |
+| <kbd>?</kbd> | Abre el tutorial de la sección actual |
+| <kbd>Esc</kbd> | Cierra el tutorial, o vuelve atrás en el asistente de kerning |
+| <kbd>Enter</kbd> | Avanza de paso, o activa el acceso que tenga el foco |
+
+### Editar los textos del tutorial
+
+Los textos de los tutoriales están en [`tutorial.json`](tutorial.json), no dentro
+del código. Se editan ahí y la app los lee al arrancar. El formato es sencillo:
+`**negrita**`, `` `código` ``, listas con `1.` o `- `, y saltos de línea. Cada
+paso tiene además la sección y el elemento que se resalta (`target`).
 
 ### El formato de la rejilla
 
