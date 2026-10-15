@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.7"
+APP_VERSION = "0.2.8"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1413,6 +1413,11 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .pestanas>input:nth-of-type(4):checked~.cuerpo:nth-of-type(4){display:block}
 .pestanas>.cuerpo .slider:last-of-type{margin-bottom:.4em}
 .pestanas>.cuerpo h4{margin:0 0 .5em;font-size:.92em;font-weight:600;color:var(--muted)}
+/* Nada de cajas dentro de cajas: lo que va adentro de una pestaña se muestra
+   plano, sin su propio borde ni fondo. */
+.pestanas>.cuerpo .panel,.pestanas>.cuerpo .bloque{
+  background:none;border:0;border-radius:0;padding:0;margin:1.1em 0 0}
+.pestanas>.cuerpo .bloque:first-child,.pestanas>.cuerpo .panel:first-child{margin-top:0}
 .ctl{width:340px;max-width:100%}
 /* La caja de controles de Dimensiones ocupa lo que sobre de ancho: los
    deslizadores necesitan lugar, no una columna angosta. */
@@ -1439,6 +1444,10 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .kernfila .ctl{flex:0 1 400px;width:400px;min-width:310px;max-width:100%}
 .kernfila .ctl .bloque{margin-top:1em;padding-top:.9em}
 .kernfila .scrollsec{max-height:none}
+/* El lote, ancho: los tres ajustes en una fila. */
+.loterow{flex-wrap:nowrap;gap:1.4em}
+.loterow .campo{flex:1 1 0;min-width:0;margin-bottom:.4em}
+@media (max-width:900px){ .loterow{flex-wrap:wrap} }
 .paso{margin:0 0 .2em;font-size:.95em}
 .paso b{color:var(--ok)}
 /* Fila con foco en la tabla de pares guardados. */
@@ -1545,6 +1554,7 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <button data-tab="accent">Tildes</button>
 <button data-tab="words">Palabras</button>
 <button data-tab="font">Fuente</button>
+<button data-tab="log">Registro</button>
 <p id="navAyuda">
   <kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> recorren<br>
   <kbd class="tecla">Ctrl</kbd>+<kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> cambian de sección<br>
@@ -1668,35 +1678,41 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
       </div>
       <div class="panel ctl">
         <div class="bloque">
-          <h4 class="titulo-bloque">Ajuste para todo el lote</h4>
-          <div class="campo">
-            <span>Izquierda: <b id="kbLv" style="color:var(--ok)">0</b></span>
-            <input type="range" id="kbLSlider" min="-600" max="600" value="0" style="width:100%">
-            <input type="number" id="kbL" value="0" style="width:5.5em;margin-top:.4em">
-          </div>
-          <div class="campo">
-            <span>Derecha: <b id="kbRv" style="color:var(--ok)">0</b></span>
-            <input type="range" id="kbRSlider" min="-600" max="600" value="0" style="width:100%">
-            <input type="number" id="kbR" value="0" style="width:5.5em;margin-top:.4em">
-          </div>
-          <div class="campo">
-            <span>Ambos: <b id="kbBothv" style="color:var(--ok)">—</b></span>
-            <input type="range" id="kbBothSlider" min="-600" max="600" value="0" style="width:100%">
-            <input type="number" id="kbBoth" placeholder="=" style="width:5.5em;margin-top:.4em">
-          </div>
-        </div>
-        <div class="bloque">
-          <h4 class="titulo-bloque">Lote (<span id="kbSelCount">0</span>)</h4>
-          <div id="kbSelPreview" style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold;color:var(--ok);height:2.2em;line-height:2.2em;background:#111;padding:0 .6em;border-radius:5px;border:1px solid #333;margin-bottom:.7em">Ninguna</div>
-          <button class="btn" id="kbApply" style="margin-right:.4em">Aplicar al lote</button>
-          <button class="btn sec" id="kbDelete" title="Pone izquierda y derecha en 0 para todo el lote">Restablecer a 0</button>
-        </div>
-        <div class="bloque">
           <h4 class="titulo-bloque">Rejilla de letras</h4>
           <div id="kernCatsBase" class="row" style="gap:.3em;margin-bottom:.5em"></div>
           <div class="chars batchgrid" data-side="base" tabindex="0"></div>
         </div>
       </div>
+    </div>
+
+    <!-- El lote va ancho, abajo de los placeholders y de la rejilla: así los tres
+         ajustes entran en una fila y no hace falta desplazarse. -->
+    <div class="bloque">
+      <h4 class="titulo-bloque">Ajuste para todo el lote</h4>
+      <div class="row loterow">
+        <div class="campo">
+          <span>Izquierda: <b id="kbLv" style="color:var(--ok)">0</b></span>
+          <input type="range" id="kbLSlider" min="-600" max="600" value="0" style="width:100%">
+          <input type="number" id="kbL" value="0" style="width:5.5em;margin-top:.4em">
+        </div>
+        <div class="campo">
+          <span>Derecha: <b id="kbRv" style="color:var(--ok)">0</b></span>
+          <input type="range" id="kbRSlider" min="-600" max="600" value="0" style="width:100%">
+          <input type="number" id="kbR" value="0" style="width:5.5em;margin-top:.4em">
+        </div>
+        <div class="campo">
+          <span>Ambos: <b id="kbBothv" style="color:var(--ok)">—</b></span>
+          <input type="range" id="kbBothSlider" min="-600" max="600" value="0" style="width:100%">
+          <input type="number" id="kbBoth" placeholder="=" style="width:5.5em;margin-top:.4em">
+        </div>
+      </div>
+    </div>
+
+    <div class="bloque">
+      <h4 class="titulo-bloque">Lote (<span id="kbSelCount">0</span>)</h4>
+      <div id="kbSelPreview" style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold;color:var(--ok);height:2.2em;line-height:2.2em;background:#111;padding:0 .6em;border-radius:5px;border:1px solid #333;margin-bottom:.7em">Ninguna</div>
+      <button class="btn" id="kbApply" style="margin-right:.4em">Aplicar al lote</button>
+      <button class="btn sec" id="kbDelete" title="Pone izquierda y derecha en 0 para todo el lote">Restablecer a 0</button>
     </div>
     </div>
   </div>
@@ -1756,14 +1772,6 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   </p>
 </div>
 
-<div class="pestanas" id="pes-imp">
-  <input type="radio" name="p-imp" id="p-imp-1" checked><label for="p-imp-1">Registro</label>
-  <div class="cuerpo">
-    <h4>Qué pasó y qué falló</h4>
-    <pre id="log" style="margin:0"></pre>
-  </div>
-</div>
-
 <div class="panel" style="margin-top:.8em">
   <p style="margin:0 0 .5em"><b>Versión <span id="verActual">…</span></b></p>
   <p class="muted" id="updEstado" style="margin:.2em 0 .8em">Todavía no se comprobó si hay actualizaciones.</p>
@@ -1783,6 +1791,11 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
     <pre id="updNotasTxt" style="max-height:150px"></pre>
   </div>
 </div>
+</section>
+
+<section id="tab-log">
+<h2>Registro</h2>
+<pre id="log"></pre>
 </section>
 
 <section id="tab-words">
@@ -2645,10 +2658,11 @@ function catChars(cat){ return [...S.chars].filter(c => cat === 'todas' ? true :
 /* ---------- Atajos de teclado, como fichas ----------
    Cada sección muestra los suyos arriba, con las teclas dibujadas igual que en
    el menú. Se generan desde acá para no repetir el marcado en el HTML. */
+/* Atajos por sección. Kerning no va acá: cada una de sus solapas tiene los
+   suyos en ATAJOS_KERN. */
 const ATAJOS = {
   imp:    [['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
   dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
-  kern:   [['←','→','recorrer'], ['Shift','+','flecha','rango'], ['Enter','aplicar'], ['Esc','volver'], ['Ctrl','+','Enter','alternar'], ['🔒','fijar'], ['?','tutorial']],
   accent: [['←','→','recorrer'], ['Enter','aplicar'], ['?','tutorial']],
   words:  [['escribir','probar'], ['?','tutorial']],
   font:   [['Enter','construir'], ['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
@@ -3597,44 +3611,68 @@ function updBarraOcultar(){
 
 async function updVigilar(){
   if (UPD_TIMER) return;
-  UPD_TIMER = setInterval(async () => {
+  // Se mira una vez enseguida: si la descarga ya arrancó (o ya terminó), la
+  // barra aparece sin esperar al primer intervalo. Y ojo: una pasada que no
+  // consigue datos NO tiene que cancelar el intervalo, porque el servidor puede
+  // estar ocupado bajando el archivo.
+  // "quieto" no se ignora en silencio: puede pasar si el sondeo va más rápido
+  // que el arranque de la descarga, y si se ignora, la barra se queda muda.
+  let quietos = 0;
+  const paso = async () => {
     let e;
     try { e = await api('/api/update/progress'); } catch (err){ return; }
-    if (!e || e.estado === 'quieto') return;
+    if (!e || !e.estado) return;
+    if (e.estado === 'quieto'){
+      quietos++;
+      if (quietos > 8){
+        if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
+        if ($('updBajar')){ $('updBajar').disabled = false; $('updBajar').textContent = 'Descargar e instalar'; }
+        updBarra(0, 'La descarga no arrancó. Probá de nuevo.');
+      }
+      return;
+    }
+    quietos = 0;
     if (e.estado === 'descargando'){
       const mb = (e.bytes / 1048576).toFixed(1);
       const tot = e.total ? (e.total / 1048576).toFixed(1) + ' MB' : '?';
       updBarra(e.porcentaje, 'Descargando… ' + mb + ' de ' + tot + ' (' + e.porcentaje + '%)');
     } else if (e.estado === 'listo'){
-      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
       updBarra(100, 'Descarga lista.');
       if ($('updInstalar')) $('updInstalar').style.display = 'inline-block';
       if ($('updBajar')) $('updBajar').style.display = 'none';
       if ($('updEstado')) $('updEstado').textContent = 'Versión ' + (e.version || '') + ' descargada. Ya se puede instalar.';
     } else if (e.estado === 'instalando'){
-      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
       updBarra(100, e.mensaje || 'Instalando…');
     } else if (e.estado === 'error'){
-      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
       updBarra(0, e.error || 'No se pudo descargar.');
       if ($('updBajar')){ $('updBajar').disabled = false; $('updBajar').textContent = 'Reintentar'; }
     }
-  }, 400);
+  };
+  UPD_TIMER = setInterval(paso, 400);
+  await paso();
 }
 
 async function updBajar(){
   const btn = $('updBajar');
   if (btn){ btn.disabled = true; btn.textContent = 'Descargando…'; }
   updBarra(0, 'Empezando la descarga…');
+  // Primero se enciende el seguimiento y después se pide la descarga: el pedido
+  // no vuelve hasta que el archivo terminó de bajar, así que si se esperara su
+  // respuesta la barra se quedaría quieta todo el tiempo.
+  updVigilar();
   try {
     const r = await api('/api/update/download', {});
     if (r && r.error){
+      if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
       updBarra(0, r.error);
       if (btn){ btn.disabled = false; btn.textContent = 'Descargar e instalar'; }
       return;
     }
-    updVigilar();
   } catch (e){
+    if (UPD_TIMER){ clearInterval(UPD_TIMER); UPD_TIMER = null; }
     updBarra(0, 'No se pudo empezar la descarga.');
     if (btn){ btn.disabled = false; btn.textContent = 'Descargar e instalar'; }
   }
@@ -4347,6 +4385,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
+        # La app se sirve a sí misma: nada de caché, o el navegador sigue usando
+        # una copia vieja de la interfaz después de actualizar.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
         self.end_headers()
         self.wfile.write(data)
 
@@ -4383,7 +4425,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, json.dumps(info, ensure_ascii=False))
             except Exception as e:
                 self._send(500, json.dumps({"error": str(e)}))
-        elif self.path == "/api/tutorial":
+        elif ruta == "/api/tutorial":
             # Sin caché: al editar tutorial.json alcanza con recargar la página.
             cuerpo = json.dumps(load_tutorial(), ensure_ascii=False).encode("utf-8")
             self.send_response(200)
@@ -4392,7 +4434,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(cuerpo)))
             self.end_headers()
             self.wfile.write(cuerpo)
-        elif self.path == "/api/demo/font":
+        elif ruta == "/api/demo/font":
             # La fuente viaja dentro del paquete (en _internal/templates), no en
             # la carpeta de datos: hay que buscarla donde corresponde.
             fuente = fontiador_paths.buscar_recurso("FontiadorDemo-Regular.otf")
@@ -4408,7 +4450,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(datos)))
             self.end_headers()
             self.wfile.write(datos)
-        elif self.path == "/api/update/check":
+        elif ruta == "/api/update/check":
             try:
                 info = check_update()
             except Exception as e:
@@ -4419,13 +4461,10 @@ class Handler(BaseHTTPRequestHandler):
                 log("Hay una versión nueva disponible: %s (tenés la %s)."
                     % (info.get("nueva"), APP_VERSION))
             self._send(200, json.dumps(info, ensure_ascii=False))
-        elif self.path == "/api/update/download":
-            self._send(200, json.dumps(update_descargar(), ensure_ascii=False))
-        elif self.path == "/api/update/progress":
+        # El avance de la descarga se pide sin cuerpo, así que llega por GET.
+        elif ruta == "/api/update/progress":
             self._send(200, json.dumps(update_estado(), ensure_ascii=False))
-        elif self.path == "/api/update/apply":
-            self._send(200, json.dumps(update_aplicar(), ensure_ascii=False))
-        elif self.path == "/api/import/status":
+        elif ruta == "/api/import/status":
             with _lock:
                 project = _state["project"]
                 turdsize, blur, alphamax, threshold, opttol = _trace_settings()
@@ -4449,12 +4488,12 @@ class Handler(BaseHTTPRequestHandler):
                 "trazado": {"turdsize": turdsize, "blur": blur, "alphamax": alphamax,
                             "threshold": threshold, "opttolerance": opttol},
             }, ensure_ascii=False))
-        elif self.path == "/api/import/guide":
+        elif ruta == "/api/import/guide":
             self._send(200, json.dumps({"programas": IMPORT_GUIDE}, ensure_ascii=False))
-        elif self.path == "/api/import/plantilla.svg":
+        elif ruta == "/api/import/plantilla.svg":
             svg = build_template_svg()
             self._send(200, svg, "image/svg+xml; charset=utf-8")
-        elif self.path == "/api/import/plantilla.png":
+        elif ruta == "/api/import/plantilla.png":
             try:
                 png = build_template_png()
             except Exception as e:
@@ -4466,7 +4505,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(png)))
             self.end_headers()
             self.wfile.write(png)
-        elif self.path == "/api/status":
+        elif ruta == "/api/status":
             with _lock:
                 project = _state["project"]
                 glyphs = project["glyphs"]
@@ -4500,13 +4539,18 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, json.dumps({"error": "no encontrado"}))
 
     def do_POST(self):
+        # Igual que en do_GET: se compara la ruta sin la cadena de consulta. El
+        # navegador manda "?t=<marca>" para que no se cacheen los pedidos, y si
+        # se compara con self.path entero, todo POST termina en 404.
+        from urllib.parse import urlparse
+        ruta = urlparse(self.path).path
         try:
             data = self._json_body()
         except json.JSONDecodeError:
             self._send(400, json.dumps({"error": "JSON inválido"}))
             return
 
-        if self.path == "/api/import/dialog":
+        if ruta == "/api/import/dialog":
             try:
                 paths = fontiador_import.pick_many("render")
             except Exception as e:
@@ -4515,7 +4559,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"rutas": paths or []}, ensure_ascii=False))
             return
 
-        if self.path == "/api/import/files":
+        if ruta == "/api/import/files":
             rutas = data.get("rutas") or data.get("paths") or []
             if isinstance(rutas, str):
                 rutas = [rutas]
@@ -4527,7 +4571,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"resultados": _import_paths(rutas)}, ensure_ascii=False))
             return
 
-        if self.path == "/api/import/rescan":
+        if ruta == "/api/import/rescan":
             try:
                 imported = process_inbox()
                 self._send(200, json.dumps({"ok": True, "importado": bool(imported)}))
@@ -4535,7 +4579,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(500, json.dumps({"error": str(e)}))
             return
 
-        if self.path == "/api/import/clear":
+        if ruta == "/api/import/clear":
             donde = str(data.get("donde", "errores"))
             if donde not in ("errores", "procesado"):
                 self._send(400, json.dumps({"error": "usá 'errores' o 'procesado'"}))
@@ -4557,7 +4601,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"ok": True, "borrados": borrados}))
             return
 
-        if self.path == "/api/recompose":
+        if ruta == "/api/recompose":
             with _lock:
                 compose_accents(force=True)
                 save_project()
@@ -4565,7 +4609,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"ok": True}))
             return
 
-        if self.path == "/api/retrace":
+        if ruta == "/api/retrace":
             last = _find_last_processed_render()
             if not last:
                 self._send(404, json.dumps({"error": "no hay render previo para re-traza"}))
@@ -4587,7 +4631,7 @@ class Handler(BaseHTTPRequestHandler):
 
         with _lock:
             project = _state["project"]
-            if self.path == "/api/kerning/set":
+            if ruta == "/api/kerning/set":
                 left, right = str(data.get("left", "")), str(data.get("right", ""))
                 if len(left) != 1 or len(right) != 1:
                     self._send(400, json.dumps({"error": "usa un carácter por lado"}))
@@ -4603,7 +4647,7 @@ class Handler(BaseHTTPRequestHandler):
                 log("Kerning manual %s%s = %d (base=%d, ajuste=%d)" % (left, right, final_val, base_val, manual_offset))
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/kerning/delete":
+            elif ruta == "/api/kerning/delete":
                 key = (str(data.get("left", "")), str(data.get("right", "")))
                 project["kerning"] = [p for p in project.get("kerning", [])
                                       if (p["left"], p["right"]) != key]
@@ -4611,7 +4655,7 @@ class Handler(BaseHTTPRequestHandler):
                 log("Kerning eliminado: %s%s" % key)
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/kerning/char":
+            elif ruta == "/api/kerning/char":
                 chars_raw = data.get("chars") or data.get("char") or ""
                 if isinstance(chars_raw, str):
                     chars = [chars_raw] if len(chars_raw) == 1 else list(chars_raw)
@@ -4625,7 +4669,7 @@ class Handler(BaseHTTPRequestHandler):
                 set_chars_kerning(chars, data.get("l", 0), data.get("r", 0))
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/adjust":
+            elif ruta == "/api/adjust":
                 char = str(data.get("char", ""))
                 if len(char) != 1:
                     self._send(400, json.dumps({"error": "elige un carácter"}))
@@ -4633,14 +4677,14 @@ class Handler(BaseHTTPRequestHandler):
                 set_adjust(char, data)
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/adjust/many":
+            elif ruta == "/api/adjust/many":
                 chars = [c for c in str(data.get("chars", "")) if c]
                 for c in chars:
                     set_adjust(c, {"advance": "", "sx": data.get("sx", 1), "sy": data.get("sy", 1),
                                    "dy": data.get("dy", 0), "rot": data.get("rot", 0)})
                 self._send(200, json.dumps({"chars": len(chars)}))
                 return
-            elif self.path == "/api/accent":
+            elif ruta == "/api/accent":
                 key = str(data.get("char", "*"))
                 if key != "*" and key not in ACCENT_PAIRS and key != ACCENT_MARK and key != TILDE_MARK:
                     self._send(400, json.dumps({"error": "elige una vocal acentuada o *"}))
@@ -4652,7 +4696,7 @@ class Handler(BaseHTTPRequestHandler):
                 compose_accents(force=True)
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/charsets":
+            elif ruta == "/api/charsets":
                 for k in CHARSET_GROUPS:
                     if k in data:
                         project["charsets"][k] = bool(data[k])
@@ -4660,7 +4704,7 @@ class Handler(BaseHTTPRequestHandler):
                 bump_version()
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/trace":
+            elif ruta == "/api/trace":
                 for k, key in (("blur","trace_blur"),("alphamax","trace_alphamax"),
                                ("threshold","trace_threshold"),("turdsize","trace_turdsize"),
                                ("opttolerance","trace_opttolerance")):
@@ -4670,13 +4714,22 @@ class Handler(BaseHTTPRequestHandler):
                 save_project()
                 self._send(200, json.dumps({"ok": True}))
                 return
-            elif self.path == "/api/build":
+            elif ruta == "/api/build":
                 pass
+            elif ruta == "/api/update/download":
+                self._send(200, json.dumps(update_descargar(), ensure_ascii=False))
+                return
+            elif ruta == "/api/update/progress":
+                self._send(200, json.dumps(update_estado(), ensure_ascii=False))
+                return
+            elif ruta == "/api/update/apply":
+                self._send(200, json.dumps(update_aplicar(), ensure_ascii=False))
+                return
             else:
                 self._send(404, json.dumps({"error": "no encontrado"}))
                 return
 
-        if self.path == "/api/build":
+        if ruta == "/api/build":
             family = (data.get("family") or "").strip() or None
             style = (data.get("style") or "").strip() or None
             try:

@@ -4,7 +4,33 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿﻿﻿## [0.2.7] — 2026-10-16
+﻿﻿﻿﻿﻿## [0.2.8] — 2026-10-16
+
+### Corregido
+
+- **La actualización no se descargaba.** Eran cuatro fallas encadenadas:
+  1. Los endpoints de descarga, progreso e instalación estaban sólo en `do_GET`,
+     pero la interfaz los pide por POST: respondían 404. Ahora están en los dos.
+  2. El sondeo del progreso se hacía por GET y esa ruta tampoco existía.
+  3. *Descargar e instalar* esperaba a que terminara toda la descarga antes de
+     encender la barra, así que ésta quedaba muda hasta el final.
+  4. `do_GET` y `do_POST` comparaban la ruta entera, así que cualquier pedido con
+     `?` de por medio daba 404.
+- La página se sirve con `Cache-Control: no-store`: el navegador ya no puede
+  quedarse con una copia vieja de la interfaz después de actualizar.
+- **Pares guardados** mostraba dos juegos de atajos: quedaba el de la estructura
+  anterior. Ahora hay uno por solapa, como corresponde.
+
+### Cambiado
+
+- **Kerning base**: el ajuste del lote salió de la columna derecha y ahora ocupa
+  todo el ancho, debajo de los placeholders y de la rejilla. Los tres ajustes
+  entran en una fila y la solapa no necesita desplazarse.
+- **Registro** vuelve a ser una página propia, después de *Fuente*.
+- **Dimensiones**: no hay más cajas dentro de cajas. Lo que va dentro de una
+  pestaña se muestra plano, sin su propio borde ni fondo.
+
+## [0.2.7] — 2026-10-16
 
 ### Cambiado
 

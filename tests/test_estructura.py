@@ -131,17 +131,23 @@ def test_secciones():
 
     # Conjuntos se integró a Fuente: no debe volver como pestaña propia.
     check("Conjuntos ya no es una pestaña", "sets" not in menu)
-    check("Registro ya no es una página", "log" not in menu)
+    # Registro volvió a ser una página propia, después de Fuente.
+    check("Registro es una página", "log" in menu)
+    check("Registro va después de Fuente",
+          menu.index("log") > menu.index("font"), str(menu))
     check("las casillas de conjuntos viven en Fuente",
           page.find('id="cs_upper"') > page.find('<section id="tab-font"'))
-    check("el registro vive en Inicio", _dentro_de(page, "tab-imp", 'id="log"'))
+    check("el registro vive en su propia sección",
+          _dentro_de(page, "tab-log", 'id="log"'))
+    check("el registro no está en Inicio",
+          not _dentro_de(page, "tab-imp", 'id="log"'))
     check("la barra lateral no muestra el contador", "navcount" not in page)
 
     # Los bloques largos tienen que ser pestañas, no paneles que crezcan la
     # página: si no, vuelve la barra de scroll.
     check("no quedan paneles desplegables", 'class="plegable"' not in page)
-    check("hay pestañas en Dimensiones e Inicio",
-          all(('id="pes-%s"' % t) in page for t in ("dim", "imp")))
+    check("hay pestañas en Dimensiones", 'id="pes-dim"' in page)
+    check("Inicio ya no tiene pestañas", 'id="pes-imp"' not in page)
     check("Fuente ya no tiene pestañas", 'id="pes-font"' not in page)
     check("Conjuntos se ve siempre, sin botón", 'id="cs_upper"' in page)
     check("no queda el botón de restablecer tutoriales",
