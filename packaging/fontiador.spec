@@ -46,6 +46,12 @@ for extra in ("docs", "templates", "packaging"):
     if os.path.isdir(p):
         datas.append((p, extra))
 
+# Los textos del tutorial: sin este archivo, la app instalada no muestra
+# tutoriales (la versión de código fuente sí, porque lo lee de la raíz).
+_tutorial = os.path.join(PROJECT_ROOT, "tutorial.json")
+if os.path.isfile(_tutorial):
+    datas.append((_tutorial, "."))
+
 # Icono (si no existe, se compila sin icono). Solo Windows y Linux: macOS queda
 # fuera de este proyecto.
 ICONO = None

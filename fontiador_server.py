@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.1"
+APP_VERSION = "0.2.2"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -417,8 +417,10 @@ def load_tutorial():
     corregirlos sin tocar nada más. Si falta o está mal escrito, la app arranca
     igual: simplemente no muestra tutoriales.
     """
-    for ruta in (os.path.join(BASE_DIR, "tutorial.json"),
-                 os.path.join(fontiador_paths.TEMPLATES_DIR, "tutorial.json")):
+    for sub in ("", "templates"):
+        ruta = fontiador_paths.buscar_recurso("tutorial.json", subcarpeta=sub)
+        if not ruta:
+            continue
         try:
             with open(ruta, "r", encoding="utf-8-sig") as f:
                 datos = json.load(f)
@@ -3796,11 +3798,9 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(cuerpo)
         elif self.path == "/api/demo/font":
-            rutas = [
-                os.path.join(fontiador_paths.TEMPLATES_DIR, "FontiadorDemo-Regular.otf"),
-                os.path.join(BASE_DIR, "templates", "FontiadorDemo-Regular.otf"),
-            ]
-            fuente = next((r for r in rutas if os.path.isfile(r)), None)
+            # La fuente viaja dentro del paquete (en _internal/templates), no en
+            # la carpeta de datos: hay que buscarla donde corresponde.
+            fuente = fontiador_paths.buscar_recurso("FontiadorDemo-Regular.otf")
             if not fuente:
                 self._send(404, json.dumps({"error": "no se encontró la fuente de demostración"}))
                 return

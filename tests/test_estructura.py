@@ -147,17 +147,20 @@ def test_tutorial():
     # Y tiene que tolerar un archivo roto sin romper la app.
     import shutil
     import tempfile
+    import fontiador_paths as fp
     tmp = tempfile.mkdtemp(prefix="fontiador_tut_")
     try:
         malo = os.path.join(tmp, "tutorial.json")
         with open(malo, "w", encoding="utf-8") as f:
             f.write("{ esto no es json")
-        original = s.BASE_DIR
-        s.BASE_DIR = tmp
-        check("un tutorial roto no rompe la app", s.load_tutorial() == {})
-        s.BASE_DIR = original
+        # Se apuntan las dos carpetas: la de datos y la del paquete, porque el
+        # archivo se busca en las dos.
+        previos = (s.BASE_DIR, fp.BASE_DIR, fp.BUNDLE_DIR)
+        s.BASE_DIR = fp.BASE_DIR = fp.BUNDLE_DIR = tmp
+        check("un tutorial roto no rompe la app", s.load_tutorial() == {},
+              str(list(s.load_tutorial().keys())[:3]))
     finally:
-        s.BASE_DIR = original
+        s.BASE_DIR, fp.BASE_DIR, fp.BUNDLE_DIR = previos
         shutil.rmtree(tmp, ignore_errors=True)
 
 

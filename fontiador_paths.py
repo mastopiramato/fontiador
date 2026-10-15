@@ -94,6 +94,51 @@ EXTRA_INBOX = os.path.join(_exe_dir(), "inbox") if MODE == "usuario" else None
 FROZEN = bool(getattr(sys, "frozen", False))
 
 
+def _bundle_dir():
+    """Carpeta de los archivos que viajan dentro del paquete (templates, docs).
+
+    PyInstaller los deja en ``_internal`` al lado del ejecutable, o en una
+    carpeta temporal cuando se empaqueta en un solo archivo. No es la carpeta de
+    datos del usuario: lo que está acá es de solo lectura.
+    """
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        return base
+    if FROZEN:
+        interno = os.path.join(_exe_dir(), "_internal")
+        if os.path.isdir(interno):
+            return interno
+        return _exe_dir()
+    return _exe_dir()
+
+
+BUNDLE_DIR = _bundle_dir()
+
+
+def buscar_recurso(nombre, subcarpeta="templates"):
+    """Busca un archivo propio de la app, en el paquete o en el código fuente.
+
+    Se prueban, en orden: la carpeta de datos del usuario (por si el usuario lo
+    reemplazó), el paquete y la raíz del proyecto. Devuelve la ruta o None.
+    """
+    candidatos = [
+        os.path.join(BASE_DIR, subcarpeta, nombre),
+        os.path.join(BUNDLE_DIR, subcarpeta, nombre),
+        os.path.join(_exe_dir(), subcarpeta, nombre),
+        os.path.join(BASE_DIR, nombre),
+        os.path.join(BUNDLE_DIR, nombre),
+    ]
+    vistos = set()
+    for c in candidatos:
+        c = os.path.normpath(c)
+        if c in vistos:
+            continue
+        vistos.add(c)
+        if os.path.isfile(c):
+            return c
+    return None
+
+
 def inbox_dirs():
     """Carpetas que se vigilan, en orden de prioridad."""
     out = []
