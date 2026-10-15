@@ -1,12 +1,11 @@
 name: Release
 
-# Se dispara al publicar una etiqueta vX.Y.Z y genera todos los instaladores.
+# Se dispara al publicar una etiqueta vX.Y.Z y genera los paquetes de Windows y
+# Linux. macOS queda fuera a proposito.
 #
-# Estado de la firma: los artefactos salen SIN FIRMAR. Los pasos de firma estan
-# escritos y comentados; alcanza con cargar los secretos para activarlos.
-#   Windows : AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
-#   macOS   : APPLE_CERT_P12 (base64), APPLE_CERT_PASSWORD, APPLE_ID,
-#             APPLE_TEAM_ID, APPLE_APP_PASSWORD
+# Estado de la firma: los artefactos salen SIN FIRMAR. El paso de firma de
+# Windows esta escrito y comentado; alcanza con cargar los secretos para
+# activarlo (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET).
 on:
   push:
     tags: ["v*"]
@@ -110,64 +109,10 @@ jobs:
             dist/installer/*.deb
             dist/installer/*.rpm
 
-  # ------------------------------------------------------------------ macOS
-  macos:
-    name: macOS (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-14      # Apple Silicon
-            arch: arm64
-          - runner: macos-13      # Intel
-            arch: x86_64
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Dependencias
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pyinstaller
-
-      - name: Pruebas
-        run: |
-          python tests/test_estructura.py
-          python tests/test_construccion.py
-
-      - name: Empaquetar
-        run: python -m PyInstaller packaging/fontiador.spec --noconfirm --distpath dist --workpath build
-
-      - name: Armar el .app y el DMG
-        env:
-          ARCH: ${{ matrix.arch }}
-        run: |
-          bash packaging/macos/build-dmg.sh
-
-      # Firma y notarizacion: requieren cuenta de desarrollador de Apple.
-      # Sin esto, el DMG funciona pero macOS pide abrirlo con clic derecho.
-      # - name: Firmar y notarizar
-      #   if: ${{ secrets.APPLE_ID != '' }}
-      #   env:
-      #     APPLE_ID: ${{ secrets.APPLE_ID }}
-      #     APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      #     APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-      #   run: bash packaging/macos/notarize.sh
-
-      - name: Publicar artefactos
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}
-          path: dist/installer/*.dmg
-
   # ----------------------------------------------------------------- Release
   publicar:
     name: Publicar la version
-    needs: [windows, linux, macos]
+    needs: [windows, linux]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -180,7 +125,7 @@ jobs:
       - name: Calcular sumas de verificacion
         run: |
           cd artefactos
-          find . -type f \( -name '*.exe' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' -o -name '*.dmg' \) \
+          find . -type f \( -name '*.exe' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' \) \
             -exec sha256sum {} \; | sed 's|  \./|  |' > SHA256SUMS
           cat SHA256SUMS
 
@@ -196,7 +141,6 @@ jobs:
             artefactos/**/*.AppImage
             artefactos/**/*.deb
             artefactos/**/*.rpm
-            artefactos/**/*.dmg
             artefactos/SHA256SUMS
           fail_on_unmatched_files: false
           generate_release_notes: false

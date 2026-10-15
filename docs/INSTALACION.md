@@ -8,13 +8,15 @@ distribuye la app. Si solo querés usarla, mirá el [README](../README.md).
 | Sistema | Artefacto | Cómo se compila |
 |---|---|---|
 | Windows | `Fontiador-<v>-win-x64-setup.exe` | PyInstaller + Inno Setup |
-| macOS | `Fontiador-<v>-macos-<arch>.dmg` | PyInstaller + `.app` + `hdiutil` |
 | Linux | `.AppImage`, `.deb`, `.rpm` | PyInstaller + AppImageKit / dpkg / rpmbuild |
 
 La app se empaqueta en **modo carpeta** (`--onedir`) y no en un único archivo:
 un ejecutable de un solo archivo se descomprime en una carpeta temporal en cada
 arranque, y además la app necesita encontrar sus carpetas `inbox/` y `output/`
 junto al ejecutable.
+
+> macOS queda **fuera** de este proyecto: no se empaqueta ni se publica para ese
+> sistema.
 
 ## Compilar en Windows
 
@@ -51,36 +53,15 @@ bash packaging/linux/build-packages.sh
 El `.deb` instala en `/opt/fontiador` y deja un lanzador en `/usr/bin/fontiador` que
 apunta los datos a `~/.local/share/Fontiador`, porque `/opt` es de solo lectura.
 
-## Compilar en macOS
-
-```bash
-python -m pip install -r requirements.txt pyinstaller
-python -m PyInstaller packaging/fontiador.spec --noconfirm
-ARCH=arm64 bash packaging/macos/build-dmg.sh
-```
-
-Para firmar y notarizar (requiere cuenta de desarrollador de Apple):
-
-```bash
-APPLE_ID=... APPLE_TEAM_ID=... APPLE_APP_PASSWORD=... \
-  bash packaging/macos/notarize.sh
-```
-
 ## Firma de código
 
-Los artefactos salen **sin firmar** por ahora. Consecuencias:
+Los artefactos salen **sin firmar** por ahora. En Windows, SmartScreen muestra
+"Windows protegió tu PC" la primera vez.
 
-- **Windows**: SmartScreen muestra "Windows protegió tu PC" la primera vez.
-- **macOS**: hay que abrir con clic derecho → Abrir; sin notarizar, macOS puede
-  decir que la app "está dañada".
-
-Los pasos de firma ya están escritos en `.github/workflows/release.yml`,
-comentados. Para activarlos alcanza con cargar los secretos:
-
-| Plataforma | Secretos |
-|---|---|
-| Windows | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` y las variables `SIGNING_ACCOUNT`, `SIGNING_PROFILE` |
-| macOS | `APPLE_CERT_P12`, `APPLE_CERT_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` |
+El paso de firma ya está escrito en `.github/workflows/release.yml`, comentado.
+Para activarlo alcanza con cargar los secretos `AZURE_TENANT_ID`,
+`AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` y las variables `SIGNING_ACCOUNT` y
+`SIGNING_PROFILE`.
 
 ## Publicar una versión
 

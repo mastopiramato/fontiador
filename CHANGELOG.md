@@ -26,8 +26,8 @@ Primera versión publicada.
 - **Buscar actualizaciones** en la pestaña *Fuente*, con la versión actual, el
   enlace de descarga y las notas del cambio. Consulta la última release publicada
   y no rompe nada si no hay conexión.
-- Instaladores y paquetes: instalador por usuario para Windows (Inno Setup),
-  DMG para macOS (arm64 e Intel) y AppImage, `.deb` y `.rpm` para Linux.
+- Instaladores y paquetes: instalador por usuario para Windows (Inno Setup) y
+  AppImage, `.deb` y `.rpm` para Linux.
 - Flujos de GitHub Actions: integración continua en los tres sistemas y
   publicación automática al etiquetar una versión.
 - Guía de instalación y compilación en `docs/INSTALACION.md`.
@@ -51,12 +51,11 @@ Primera versión publicada.
 - La app solo se servía en la ruta exacta `/`, así que cualquier dirección con
   parámetros daba 404.
 - Los mensajes de error al importar explican qué hacer, no solo qué falló.
-- En macOS y Linux, los scripts de empaquetado usaban `grep -oP`, que no existe
-  en BSD grep.
 
 ### Notas
 
-- Los artefactos todavía **no están firmados**: Windows SmartScreen avisa la
-  primera vez y en macOS hay que abrir la app con clic derecho → Abrir.
+- Los artefactos todavía **no están firmados**: en Windows, SmartScreen avisa la
+  primera vez. En Linux, al AppImage hay que darle permiso de ejecución.
+- macOS queda fuera del proyecto: no se empaqueta ni se publica para ese sistema.
 
 [0.2.0]: https://github.com/mastopiramato/fontiador/releases/tag/v0.2.0

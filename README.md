@@ -8,6 +8,8 @@ la fuente.
 Funciona **local y sin conexión**: tus archivos no salen de tu computadora y no
 hay cuentas, ni telemetría, ni servidores.
 
+Disponible para **Windows y Linux**.
+
 - Repositorio: <https://github.com/mastopiramato/fontiador>
 - Descargas: <https://github.com/mastopiramato/fontiador/releases/latest>
 
@@ -20,16 +22,6 @@ hay cuentas, ni telemetría, ni servidores.
    administrador, en `%LOCALAPPDATA%\Programs\Fontiador`.
 3. Como el instalador todavía no está firmado, Windows SmartScreen va a mostrar
    un aviso: *Más información* → *Ejecutar de todas formas*.
-
-### macOS
-
-1. Descargá `Fontiador-<versión>-macos-arm64.dmg` (Apple Silicon) o
-   `...-macos-x86_64.dmg` (Intel).
-2. Abrilo y arrastrá **Fontiador** a la carpeta *Aplicaciones*.
-3. El DMG todavía no está notarizado, así que la primera vez hay que abrir la app
-   con **clic derecho → Abrir** en lugar de doble clic. Si macOS dice que está
-   dañada, ejecutá una vez:
-   `xattr -dr com.apple.quarantine /Applications/Fontiador.app`
 
 ### Linux
 
@@ -142,10 +134,10 @@ Para empaquetar:
 
 ```bash
 python packaging/make_icon.py                                  # iconos
-python -m PyInstaller packaging/fontiador.spec --noconfirm        # dist/Fontiador/
-iscc packaging/windows/fontiador.iss                              # Windows
-bash packaging/linux/build-appimage.sh                         # Linux
-bash packaging/macos/build-dmg.sh                              # macOS
+python -m PyInstaller packaging/fontiador.spec --noconfirm     # dist/Fontiador/
+iscc packaging/windows/fontiador.iss                           # Windows
+bash packaging/linux/build-appimage.sh                         # Linux (AppImage)
+bash packaging/linux/build-packages.sh                         # Linux (.deb y .rpm)
 ```
 
 ## Licencia

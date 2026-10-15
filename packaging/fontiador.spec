@@ -46,14 +46,11 @@ for extra in ("docs", "templates", "packaging"):
     if os.path.isdir(p):
         datas.append((p, extra))
 
-# Icono por plataforma (si no existe, se compila sin icono).
+# Icono (si no existe, se compila sin icono). Solo Windows y Linux: macOS queda
+# fuera de este proyecto.
 ICONO = None
-if sys.platform.startswith("win"):
-    _ic = os.path.join(PROJECT_ROOT, "packaging", "icons", "fontiador.ico")
-elif sys.platform == "darwin":
-    _ic = os.path.join(PROJECT_ROOT, "packaging", "icons", "fontiador.icns")
-else:
-    _ic = None
+_ic = os.path.join(PROJECT_ROOT, "packaging", "icons", "fontiador.ico") \
+    if sys.platform.startswith("win") else None
 if _ic and os.path.exists(_ic):
     ICONO = _ic
     print("Icono:", ICONO)

@@ -166,12 +166,6 @@ footer a{color:var(--ok)}
         <a class="btn" data-dl="win" href="https://github.com/mastopiramato/fontiador/releases/latest">Descargar instalador</a>
       </div>
       <div class="card">
-        <h3>macOS</h3>
-        <p>Apple Silicon (M1 o posterior) e Intel.</p>
-        <span class="file" data-file="mac">Fontiador-0.2.0-macos-arm64.dmg</span>
-        <a class="btn" data-dl="mac" href="https://github.com/mastopiramato/fontiador/releases/latest">Ver en las descargas</a>
-      </div>
-      <div class="card">
         <h3>Linux</h3>
         <p>AppImage portable, o paquete .deb para Debian y Ubuntu.</p>
         <span class="file" data-file="linux">Fontiador-0.2.0-x86_64.AppImage</span>
@@ -180,8 +174,8 @@ footer a{color:var(--ok)}
     </div>
     <div class="note">
       <b>Los archivos todavía no están firmados.</b> En Windows, SmartScreen va a avisar la primera
-      vez: <i>Más información → Ejecutar de todas formas</i>. En macOS hay que abrir la app con
-      <b>clic derecho → Abrir</b> en lugar de doble clic.
+      vez: <i>Más información → Ejecutar de todas formas</i>. En Linux, al AppImage dale permiso de
+      ejecución con <code>chmod +x</code> antes de abrirlo.
     </div>
   </div>
 </section>
@@ -382,7 +376,6 @@ footer a{color:var(--ok)}
       van a la carpeta del usuario:</p>
     <table>
       <tr><th>Windows</th><td><code>%LOCALAPPDATA%\Fontiador</code></td></tr>
-      <tr><th>macOS</th><td><code>~/Library/Application Support/Fontiador</code></td></tr>
       <tr><th>Linux</th><td><code>~/.local/share/Fontiador</code></td></tr>
     </table>
     <p class="sub" style="margin-top:1.1em">Se puede forzar con la variable de entorno
@@ -408,7 +401,6 @@ footer a{color:var(--ok)}
 (async function () {
   var tipos = {
     win: /win-x64-setup\.exe$/i,
-    mac: /macos-(arm64|x86_64)\.dmg$/i,
     linux: /(\.AppImage|\.deb)$/i
   };
   try {
