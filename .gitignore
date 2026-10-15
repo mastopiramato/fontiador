@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Empaquetado
+build/
+dist/
+# Solo el .spec que genera PyInstaller en la raiz; el de packaging/ SI se versiona.
+/fontiador.spec
+/Fontiador.spec
+packaging/out/
+installer/out/
+
+# Estado local de la app (datos del usuario, no van al repo)
+fontiador.log
+fontiador_project.json
+fontiador_project.json.tmp
+fontiador_project.json.dañado
+# Restos de cuando la app se llamaba Affont
+affont.log
+affont_project.json
+inbox/procesado/
+inbox/errores/
+output/debug/
+
+# Temporales
+*.tmp
+*.bak
+_*.js
+_*.html
+_*.txt
+_*.log

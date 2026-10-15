@@ -1,0 +1,6 @@
+fonttools
+shapely
+pywebview
+potracer
+numpy
+pillow

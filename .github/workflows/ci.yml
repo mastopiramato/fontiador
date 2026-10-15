@@ -1,0 +1,58 @@
+name: CI
+
+# Se ejecuta en cada push y en cada pull request: comprueba que la app arranca,
+# que la página está bien formada y que se puede construir una fuente.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    name: Pruebas (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Pruebas de estructura
+        run: python tests/test_estructura.py
+
+      - name: Comprobar que la app arranca y responde
+        shell: bash
+        run: |
+          python fontiador_server.py --port 8799 --no-browser &
+          SERVER_PID=$!
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:8799/api/status > /dev/null; then
+              echo "La API respondio"
+              break
+            fi
+            sleep 1
+          done
+          # Se usa -o /dev/null con -w en vez de "| head": head cierra la tuberia
+          # antes de tiempo, curl sale con 23 (SIGPIPE) y pipefail lo toma como
+          # un fallo aunque la app haya respondido bien.
+          for ruta in /api/status /api/import/status /api/import/plantilla.svg /api/update/check; do
+            curl -sf -o /dev/null -w "$ruta -> %{http_code} (%{size_download} bytes)\n" \
+              "http://127.0.0.1:8799$ruta"
+          done
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Construir una fuente de extremo a extremo
+        shell: bash
+        run: python tests/test_construccion.py

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fontiador — de tu programa de diseño a una fuente OpenType</title>
+<meta name="description" content="Fontiador arma una fuente OpenType a partir de la rejilla de glifos que dibujás en Affinity, Illustrator, Inkscape, Figma o CorelDRAW. Funciona local y sin conexión.">
+<style>
+:root{
+  --bg:#141414; --panel:#1e1e1e; --panel2:#262626; --line:#333; --text:#eee;
+  --muted:#9a9a9a; --ok:#7bd44b; --accent:#f06fc0; --warn:#e0b34a;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--ok)}
+.wrap{max-width:1000px;margin:0 auto;padding:0 1.2em}
+
+/* ---------- encabezado ---------- */
+header{
+  background:linear-gradient(180deg,#1b2416 0%,var(--bg) 100%);
+  border-bottom:1px solid var(--line);padding:3.2em 0 2.6em;
+}
+.brand{display:flex;align-items:center;gap:.9em;margin-bottom:1.1em}
+.brand img{width:56px;height:56px;border-radius:13px}
+.brand h1{font-size:1.55em;margin:0;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:.92em}
+h2{font-size:1.3em;margin:0 0 .3em;letter-spacing:-.01em}
+h3{font-size:1.05em;margin:0 0 .6em}
+.lead{font-size:1.12em;color:#d6d6d6;max-width:52em;margin:0 0 1.4em}
+.lead b{color:#fff}
+.pill{
+  display:inline-block;background:#2a3a22;border:1px solid var(--ok);color:var(--ok);
+  border-radius:20px;padding:.2em .8em;font-size:.8em;font-weight:600;margin-bottom:1em;
+}
+
+/* ---------- botones ---------- */
+.btns{display:flex;flex-wrap:wrap;gap:.6em;margin:1.2em 0 0}
+.btn{
+  display:inline-block;background:var(--ok);color:#111;text-decoration:none;
+  padding:.62em 1.1em;border-radius:8px;font-weight:700;font-size:.95em;border:1px solid transparent;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.sec{background:#333;color:var(--text);border-color:#4a4a4a;font-weight:600}
+.btn.sec:hover{background:#3d3d3d}
+
+/* ---------- secciones ---------- */
+section{padding:2.8em 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sub{color:var(--muted);margin:.2em 0 1.6em;max-width:50em}
+
+/* ---------- descargas ---------- */
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1em;margin-top:1.4em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.1em}
+.card h3{display:flex;align-items:center;gap:.5em;margin-bottom:.3em}
+.card p{margin:.2em 0 .8em;color:var(--muted);font-size:.92em}
+.file{
+  font-family:ui-monospace,Consolas,monospace;font-size:.8em;color:#bbb;
+  background:#111;border:1px solid var(--line);border-radius:6px;padding:.3em .5em;
+  display:block;overflow-wrap:anywhere;margin-bottom:.7em;
+}
+.note{
+  background:#241f14;border:1px solid #5a4a20;border-left:3px solid var(--warn);
+  border-radius:8px;padding:.8em 1em;margin-top:1.2em;font-size:.92em;color:#e8dcc0;
+}
+.note b{color:var(--warn)}
+
+/* ---------- pasos ---------- */
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{
+  counter-increment:s;position:relative;padding:0 0 1.4em 3.1em;
+  border-left:2px solid var(--line);margin-left:1.1em;
+}
+.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps li::before{
+  content:counter(s);position:absolute;left:-1.1em;top:-.15em;
+  width:2.2em;height:2.2em;border-radius:50%;background:var(--ok);color:#111;
+  font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95em;
+}
+.steps b{color:#fff}
+.steps code{background:#111;border:1px solid var(--line);border-radius:4px;padding:.1em .35em;font-size:.88em}
+
+/* ---------- tutoriales por sección ---------- */
+/* Importaciones va a lo ancho (es la pantalla de inicio y tiene más contenido);
+   el resto en columnas. align-items:start evita que las tarjetas más cortas se
+   estiren a la altura de la más alta del mismo renglón. */
+.tours{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1em;align-items:start}
+.tours.solo{grid-template-columns:1fr}
+details{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:0;overflow:hidden;
+}
+details[open]{border-color:#4a4a4a}
+summary{
+  cursor:pointer;padding:1em 1.1em;font-weight:700;font-size:1.02em;
+  display:flex;align-items:center;gap:.6em;list-style:none;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"▸";margin-left:auto;color:var(--muted);font-weight:400}
+details[open] summary::after{content:"▾"}
+summary .tag{
+  font-size:.72em;font-weight:600;color:var(--muted);border:1px solid var(--line);
+  border-radius:20px;padding:.1em .6em;
+}
+.body{padding:0 1.1em 1.1em;border-top:1px solid var(--line);margin-top:0}
+.body p{color:#cfcfcf;font-size:.94em}
+.body ol,.body ul{margin:.5em 0 .3em 1.2em;padding:0;font-size:.94em;color:#cfcfcf}
+.body li{margin-bottom:.35em}
+.body b{color:#fff}
+kbd{
+  background:#111;border:1px solid #555;border-bottom-width:3px;border-radius:5px;
+  padding:.1em .45em;font-size:.8em;font-family:ui-monospace,Consolas,monospace;color:#ddd;
+}
+.krow{margin-top:.6em;display:flex;flex-wrap:wrap;gap:.35em;align-items:center}
+
+/* ---------- formato ---------- */
+table{border-collapse:collapse;width:100%;margin-top:1em;font-size:.93em}
+th,td{text-align:left;padding:.55em .7em;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+td code{background:#111;border:1px solid var(--line);border-radius:4px;padding:.1em .35em}
+
+footer{padding:2.4em 0 3em;color:var(--muted);font-size:.9em}
+footer a{color:var(--ok)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <img src="https://raw.githubusercontent.com/mastopiramato/fontiador/main/packaging/icons/fontiador.png" alt="">
+      <div>
+        <h1>Fontiador</h1>
+        <span>De tu programa de diseño a una fuente OpenType</span>
+      </div>
+    </div>
+    <span class="pill" id="version">versión 0.2.0</span>
+    <p class="lead">
+      Dibujás los glifos en <b>Affinity, Illustrator, Inkscape, Figma o CorelDRAW</b>.
+      Fontiador toma esa rejilla, la traza y te deja ajustar <b>dimensiones, kerning, tildes y
+      conjuntos de caracteres</b> antes de exportar la fuente. Todo en tu computadora: sin
+      cuentas, sin telemetría y sin subir tus archivos a ningún lado.
+    </p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/mastopiramato/fontiador/releases/latest" id="btnDescarga">Descargar</a>
+      <a class="btn sec" href="#tutorial">Ver el tutorial</a>
+      <a class="btn sec" href="https://github.com/mastopiramato/fontiador">Código en GitHub</a>
+    </div>
+  </div>
+</header>
+
+<section id="descargas">
+  <div class="wrap">
+    <h2>Descargas</h2>
+    <p class="sub">Cada sistema tiene su archivo. El instalador de Windows se instala por usuario
+      y no pide permisos de administrador.</p>
+    <div class="dl">
+      <div class="card">
+        <h3>Windows</h3>
+        <p>Windows 10 u 11, 64 bits.</p>
+        <span class="file" data-file="win">Fontiador-0.2.0-win-x64-setup.exe</span>
+        <a class="btn" data-dl="win" href="https://github.com/mastopiramato/fontiador/releases/latest">Descargar instalador</a>
+      </div>
+      <div class="card">
+        <h3>macOS</h3>
+        <p>Apple Silicon (M1 o posterior) e Intel.</p>
+        <span class="file" data-file="mac">Fontiador-0.2.0-macos-arm64.dmg</span>
+        <a class="btn" data-dl="mac" href="https://github.com/mastopiramato/fontiador/releases/latest">Ver en las descargas</a>
+      </div>
+      <div class="card">
+        <h3>Linux</h3>
+        <p>AppImage portable, o paquete .deb para Debian y Ubuntu.</p>
+        <span class="file" data-file="linux">Fontiador-0.2.0-x86_64.AppImage</span>
+        <a class="btn" data-dl="linux" href="https://github.com/mastopiramato/fontiador/releases/latest">Ver en las descargas</a>
+      </div>
+    </div>
+    <div class="note">
+      <b>Los archivos todavía no están firmados.</b> En Windows, SmartScreen va a avisar la primera
+      vez: <i>Más información → Ejecutar de todas formas</i>. En macOS hay que abrir la app con
+      <b>clic derecho → Abrir</b> en lugar de doble clic.
+    </div>
+  </div>
+</section>
+
+<section id="tutorial">
+  <div class="wrap">
+    <h2>Cómo se usa, de punta a punta</h2>
+    <p class="sub">El recorrido completo son cinco pasos. En la app, cada sección muestra este
+      mismo tutorial la primera vez que la abrís, y podés repetirlo con el botón <b>?</b>.</p>
+    <ol class="steps">
+      <li>
+        <b>Descargá la plantilla base.</b> Está en la pestaña <b>Importaciones</b>, en SVG o PNG.
+        Ya trae la cuadrícula, la línea base verde y el orden de los 103 caracteres.
+      </li>
+      <li>
+        <b>Dibujá los glifos encima.</b> Abrí la plantilla en tu programa de diseño y dibujá cada
+        carácter dentro de su celda, apoyado en la línea base. La plantilla no se toca: usala como
+        guía de fondo.
+      </li>
+      <li>
+        <b>Exportá el render.</b> PNG a 600 ppp con <b>10 000 px de ancho</b> (10 columnas × 1000 px)
+        y fondo transparente. Si tu programa puede volcar los contornos a JSON, mejor todavía:
+        en ese caso no hay que trazar nada y las curvas salen exactas.
+      </li>
+      <li>
+        <b>Importalo.</b> En <b>Importaciones</b>, el botón <i>Elegir archivo…</i> abre el diálogo del
+        sistema. La app recorta la rejilla celda por celda, traza cada glifo y reconstruye la fuente.
+      </li>
+      <li>
+        <b>Ajustá y reconstruí.</b> Repasá <b>Dimensiones</b> y <b>Kerning</b>, revisá las
+        <b>Tildes</b>, elegí qué entra en <b>Conjuntos</b> y dale a <i>Reconstruir fuente</i> en
+        <b>Fuente</b>. El <code>.otf</code> queda en la carpeta <code>output/</code>.
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="secciones">
+  <div class="wrap">
+    <h2>Qué hace cada sección</h2>
+    <p class="sub">Abrí cada una para ver sus controles y sus atajos de teclado.</p>
+    <div class="tours solo">
+
+      <details open>
+        <summary>Importaciones <span class="tag">pantalla de inicio</span></summary>
+        <div class="body">
+          <p>Es el punto de entrada: acá llega el trabajo que hiciste en tu programa de diseño.</p>
+          <ol>
+            <li><b>Elegir archivo…</b> abre el diálogo del sistema. Se pueden elegir varios a la vez.</li>
+            <li>La app reconoce <b>PNG, JPG, SVG y JSON</b>. El JSON se importa con los vectores
+              exactos; las imágenes se trazan.</li>
+            <li><b>Formato que espera la app</b> muestra la cuadrícula, la línea base y el ancho
+              exacto que tiene que tener tu render.</li>
+            <li><b>Descargar plantilla</b> baja la guía base en SVG o PNG, lista para dibujar encima.</li>
+            <li><b>Cómo exportar desde cada programa</b> tiene el paso a paso para Affinity,
+              Illustrator, Inkscape, Figma, CorelDRAW y cualquier otro.</li>
+            <li><b>Carpetas vigiladas</b> muestra qué está pendiente, qué se procesó y qué falló.
+              Si algo sale mal, el motivo queda en <b>Registro</b>.</li>
+          </ol>
+          <p>Si preferís no usar el diálogo, podés copiar el archivo dentro de la carpeta
+            <code>inbox/</code> y usar <i>Re-escanear inbox</i>.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="tours">
+
+      <details>
+        <summary>Dimensiones</summary>
+        <div class="body">
+          <p>Corrige el tamaño y la posición de cada glifo.</p>
+          <ul>
+            <li>La rejilla de caracteres de arriba elige qué estás editando.</li>
+            <li><b>Escala bloqueada a proporción</b>: con el candado puesto, al mover un valor el
+              otro se acomoda solo. Sin candado, ancho y alto van por separado.</li>
+            <li><b>Ancho</b>, <b>Alto</b>, <b>Desplazamiento Y</b> y <b>Rotación</b> se aplican al
+              carácter seleccionado.</li>
+            <li><b>Proporción original</b> y <b>Sin rotación</b> deshacen esos cambios.</li>
+            <li>Abajo están los controles de <b>trazado</b> (umbral, desenfoque, suavizado):
+              afectan a los renders que importes de acá en adelante.</li>
+            <li><b>Re-trazar último render</b> vuelve a procesar el último archivo importado, y
+              <b>Diagnóstico</b> guarda la máscara y el trazado de la celda actual en
+              <code>output/debug/</code> para ver qué está pasando.</li>
+          </ul>
+          <div class="krow"><kbd>clic</kbd> selecciona · <kbd>Shift</kbd>+<kbd>clic</kbd> suma a la
+            selección · <kbd>Ctrl</kbd>+<kbd>clic</kbd> compara · <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd>
+            recorren · <kbd>Esc</kbd> limpia</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Kerning</summary>
+        <div class="body">
+          <p>El espacio entre pares de letras. Tiene dos herramientas.</p>
+          <h3>Manual por par</h3>
+          <p>Corrige un par concreto (AV, To, Yo…). Se hace en tres pasos:</p>
+          <ol>
+            <li><b>Izquierda</b>: elegís el carácter de la izquierda.</li>
+            <li><b>Derecha</b>: elegís el de la derecha.</li>
+            <li><b>Valor</b>: ajustás la separación final.</li>
+          </ol>
+          <p>El valor final es <b>base + ajuste manual</b>. La base sale del render; lo que movés a
+            mano se guarda aparte, así podés volver a trazar sin perder tus ajustes.</p>
+          <div class="krow"><kbd>←</kbd><kbd>→</kbd> recorren · <kbd>Shift</kbd> extiende el rango ·
+            <kbd>Enter</kbd> avanza de paso · <kbd>Esc</kbd> retrocede ·
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> alterna · <kbd>🔒</kbd> fija un lado</div>
+          <h3 style="margin-top:1.1em">Base por lote</h3>
+          <p>Aplica la misma regla a muchos caracteres de una vez: definís cuánto aporta cada
+            carácter por su lado <b>izquierdo</b> y <b>derecho</b>, y el servidor combina los dos
+            lados de cada par. <b>⇄</b> intercambia los placeholders y <b>Restablecer a 0</b> limpia
+            el lote.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Palabras</summary>
+        <div class="body">
+          <p>Escribí cualquier palabra o frase para ver cómo se comportan juntos el espaciado y el
+            kerning. Es la forma más rápida de detectar un par que quedó mal.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Tildes</summary>
+        <div class="body">
+          <p>El template no trae vocales acentuadas: el servidor arma <b>Á É Í Ó Ú á é í ó ú Ñ ñ</b>
+            uniendo cada vocal con su marca. Si alguna queda corrida, elegís la letra y ajustás
+            <b>X</b>, <b>Y</b> o la <b>escala</b>.</p>
+          <p><b>Recomponer</b> rehace todas las tildes con los ajustes actuales, y
+            <b>Restablecer</b> vuelve a los valores de fábrica.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Conjuntos de caracteres</summary>
+        <div class="body">
+          <p>Elegís qué grupos entran en la fuente: <b>mayúsculas</b>, <b>minúsculas</b>,
+            <b>números</b> y <b>puntuación</b>.</p>
+          <p>Solo se construyen los grupos activos. Destildá <b>Puntuación</b> si tu fuente es para
+            titulares: sale más liviana y sin glifos de relleno.</p>
+          <p>Acá también está <b>Restablecer tutoriales</b>, que vuelve a mostrar el tutorial de cada
+            sección la próxima vez que la abras.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Fuente</summary>
+        <div class="body">
+          <p>El nombre con el que el sistema va a reconocer tu fuente.</p>
+          <ul>
+            <li><b>Familia</b>: el nombre principal (por ejemplo <code>Fuenteara</code>).</li>
+            <li><b>Estilo</b>: <code>Regular</code>, <code>Bold</code>, <code>Italic</code>…</li>
+            <li><b>Reconstruir fuente</b> genera el <code>.otf</code> con los caracteres activos, el
+              kerning y los ajustes. Se guarda en la carpeta <code>output/</code>.</li>
+          </ul>
+          <p>Más abajo está <b>Buscar actualizaciones</b>, que consulta si hay una versión nueva
+            publicada y te deja el enlace de descarga.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Registro</summary>
+        <div class="body">
+          <p>Cada importación, cada re-trazado y cada fuente generada quedan acá con la hora. Si una
+            celda del render salió vacía o el render no tiene el tamaño esperado, el motivo se
+            explica en este panel: es el primer lugar donde mirar cuando algo no sale como
+            esperabas.</p>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<section id="formato">
+  <div class="wrap">
+    <h2>El formato de la rejilla</h2>
+    <p class="sub">Es lo único que hay que respetar para que la importación funcione. El orden de
+      los caracteres es estricto: si cambia, los glifos se asignan al carácter equivocado.</p>
+    <table>
+      <tr><th>Cuadrícula</th><td>10 columnas × 11 filas (103 caracteres)</td></tr>
+      <tr><th>Tamaño de celda</th><td>1000 × 1000 px</td></tr>
+      <tr><th>Ancho del render</th><td>10 000 px (en PNG, 600 ppp)</td></tr>
+      <tr><th>Línea base</th><td>800 px desde el borde superior de cada celda</td></tr>
+      <tr><th>Avance por defecto</th><td>500 unidades (UPM 1000)</td></tr>
+    </table>
+    <p class="sub" style="margin-top:1.2em">La plantilla descargable ya trae todo esto dibujado,
+      incluidas las líneas guía de altura de mayúscula y de x.</p>
+  </div>
+</section>
+
+<section id="datos">
+  <div class="wrap">
+    <h2>Dónde guarda tus cosas</h2>
+    <p class="sub">Si la carpeta de la app es escribible, todo queda ahí al lado: <code>inbox/</code>,
+      <code>output/</code>, el proyecto y el registro. Si no —una instalación de sistema— los datos
+      van a la carpeta del usuario:</p>
+    <table>
+      <tr><th>Windows</th><td><code>%LOCALAPPDATA%\Fontiador</code></td></tr>
+      <tr><th>macOS</th><td><code>~/Library/Application Support/Fontiador</code></td></tr>
+      <tr><th>Linux</th><td><code>~/.local/share/Fontiador</code></td></tr>
+    </table>
+    <p class="sub" style="margin-top:1.1em">Se puede forzar con la variable de entorno
+      <code>FONTIADOR_DATA_DIR</code>.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Fontiador</b> es software libre, con licencia MIT.
+      <a href="https://github.com/mastopiramato/fontiador">Código</a> ·
+      <a href="https://github.com/mastopiramato/fontiador/releases">Descargas</a> ·
+      <a href="https://github.com/mastopiramato/fontiador/blob/main/docs/INSTALACION.md">Instalación y compilación</a></p>
+    <p>Proyecto independiente. No está afiliado a Serif, Adobe, Inkscape, Figma ni Corel. Los
+      nombres de esos programas se usan solo para explicar cómo exportar desde cada uno.</p>
+  </div>
+</footer>
+
+<script>
+// Si el navegador puede consultar la API de GitHub, se muestran los nombres de
+// archivo y los enlaces directos de la última release. Si no, quedan los enlaces
+// a la página de descargas, que siempre funciona.
+(async function () {
+  var tipos = {
+    win: /win-x64-setup\.exe$/i,
+    mac: /macos-(arm64|x86_64)\.dmg$/i,
+    linux: /(\.AppImage|\.deb)$/i
+  };
+  try {
+    var r = await fetch('https://api.github.com/repos/mastopiramato/fontiador/releases/latest',
+                        { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (!r.ok) return;
+    var rel = await r.json();
+    if (rel.tag_name) {
+      var v = document.getElementById('version');
+      if (v) v.textContent = 'versión ' + String(rel.tag_name).replace(/^v/i, '');
+    }
+    var assets = rel.assets || [];
+    Object.keys(tipos).forEach(function (k) {
+      var a = assets.filter(function (x) { return tipos[k].test(x.name); })[0];
+      if (!a) return;
+      var f = document.querySelector('[data-file="' + k + '"]');
+      if (f) f.textContent = a.name + '  (' + (a.size / 1048576).toFixed(1) + ' MB)';
+      var d = document.querySelector('[data-dl="' + k + '"]');
+      if (d) { d.href = a.browser_download_url; d.textContent = 'Descargar'; }
+    });
+  } catch (e) { /* sin conexión: quedan los enlaces genéricos */ }
+})();
+</script>
+</body>
+</html>
