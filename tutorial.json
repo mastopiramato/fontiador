@@ -34,7 +34,7 @@
         ]
       },
       {
-        "target": "#impCarpetas",
+        "target": "#impZona",
         "title": "Qué pasó con cada archivo",
         "body": "Acá ves lo que quedó pendiente, lo que se procesó y lo que falló. Si un render no tiene el tamaño esperado, el motivo queda en **Registro**.",
         "keys": [
@@ -222,7 +222,7 @@
     "title": "Fuente",
     "steps": [
       {
-        "target": "#cs_upper",
+        "target": "#pes-font",
         "title": "Qué entra en la fuente",
         "body": "Solo se construyen los grupos activos. Destildá **Puntuación** si tu fuente es solo para titulares: la fuente sale más liviana y sin glifos de relleno.",
         "keys": [
@@ -254,19 +254,6 @@
         "demo": "build",
         "viewBox": "-60 0 1120 360",
         "loop": true
-      }
-    ]
-  },
-  "log": {
-    "title": "Registro",
-    "steps": [
-      {
-        "target": "#log",
-        "title": "Qué pasó y qué falló",
-        "body": "Cada importación, cada re-trazado y cada fuente generada quedan acá, con la hora. Si una celda del render está vacía o el render no tiene el tamaño esperado, el motivo se explica en este panel.",
-        "keys": [
-          "últimas 50 líneas"
-        ]
       }
     ]
   }

@@ -4,7 +4,33 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿## [0.2.4] — 2026-10-16
+﻿﻿## [0.2.5] — 2026-10-16
+
+### Cambiado
+
+- **Pestañas en lugar de paneles que crecían.** Antes, abrir un bloque estiraba
+  la página y aparecía la barra de scroll; ahora las pestañas cambian en el mismo
+  lugar y el cuerpo se desplaza por dentro. Con esto, ninguna de las seis
+  secciones necesita scroll de página, ni siquiera con la pestaña abierta.
+  - *Dimensiones*: Ajustes · Trazado del pincel · Comparar tamaños
+  - *Inicio*: Registro · Formato · Versión
+  - *Fuente*: Conjuntos · Avanzado
+- **La página Registro desapareció**: el registro es ahora una pestaña de Inicio.
+- **Inicio se enfoca en la plantilla**: se fueron *Carpetas vigiladas* y
+  *Correspondencia de cada celda*, y el detalle del formato pasó a una pestaña,
+  dejando a la vista la descarga de la plantilla.
+- **Atajos de teclado**: ahora se distinguen las teclas de lo que hacen. Cada
+  atajo va aparte, las teclas llevan recuadro y la explicación va sin borde y en
+  otro color.
+- **Barra lateral**: se quitó el contador de glifos.
+- Atajos nuevos: **Alt+↑ / Alt+↓** cambian de pestaña dentro de la sección.
+
+### Corregido
+
+- La barra de progreso del trabajo no se mostraba: había quedado detrás de un
+  elemento que ya no existe.
+
+## [0.2.4] — 2026-10-16
 
 ### Cambiado
 

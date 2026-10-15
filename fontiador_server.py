@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.4"
+APP_VERSION = "0.2.5"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1198,21 +1198,37 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .row{display:flex;gap:1.4em;align-items:flex-start;flex-wrap:wrap}
 .panel{background:var(--panel);border-radius:10px;padding:1em;border:1px solid var(--line)}
 .preview{background:#0d0d0d;border-radius:10px;border:1px solid var(--line);display:block}
-/* Paneles plegables: los bloques que no hacen falta todo el tiempo arrancan
-   cerrados, así ninguna sección necesita scroll. Se abren con clic en el
-   encabezado o con Alt+Enter. */
-details.plegable{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:.7em}
-details.plegable>summary{cursor:pointer;padding:.55em .85em;font-weight:600;font-size:.94em;
-  display:flex;align-items:center;gap:.5em;list-style:none;border-radius:10px}
-details.plegable>summary::-webkit-details-marker{display:none}
-details.plegable>summary::before{content:"▸";color:var(--muted);font-weight:400}
-details.plegable[open]>summary::before{content:"▾"}
-details.plegable[open]>summary{border-bottom:1px solid var(--line);border-radius:10px 10px 0 0}
-details.plegable>summary:hover{color:#fff}
-details.plegable>summary .pista{margin-left:auto;font-size:.78em;color:#666;font-weight:400}
-details.plegable .cuerpo{padding:.7em .85em .85em}
-details.plegable .cuerpo .slider:last-of-type{margin-bottom:.4em}
+/* ---------- Pestañas ----------
+   Los bloques que no se usan todo el tiempo no se despliegan hacia abajo (eso
+   haría crecer la página y aparecería la barra de scroll): se cambian en el
+   mismo lugar, como pestañas. Se implementan con radios, así el navegador se
+   encarga de que haya una sola activa. */
+.pestanas{margin-top:.6em}
+.pestanas>input{position:absolute;opacity:0;width:0;height:0}
+.pestanas>label{display:inline-block;cursor:pointer;padding:.35em .8em;margin:0 .25em .4em 0;
+  border:1px solid var(--line);border-radius:7px;font-size:.88em;color:var(--muted);background:#1b1b1b}
+.pestanas>label:hover{color:var(--text);border-color:#555}
+.pestanas>input:checked+label{background:var(--ok);color:#111;border-color:var(--ok);font-weight:600}
+.pestanas>input:focus-visible+label{outline:2px solid var(--accent);outline-offset:1px}
+/* El cuerpo de una pestaña tiene altura acotada y se desplaza por dentro: así
+   abrir una pestaña nunca hace crecer la página ni saca la barra de scroll. */
+/* El cuerpo de una pestaña se desplaza por dentro. El límite real lo pone
+   ajustarAltoPestanas(), que sabe cuánto sobra de ventana y cuánto mide la
+   columna vecina; este valor es solo el respaldo por si el cálculo no corrió. */
+.pestanas>.cuerpo{display:none;border:1px solid var(--line);border-radius:10px;padding:.8em .9em;
+  background:var(--panel);max-height:52vh;overflow:auto}
+.pestanas>.cuerpo::-webkit-scrollbar{width:8px}
+.pestanas>.cuerpo::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:4px}
+.pestanas>input:nth-of-type(1):checked~.cuerpo:nth-of-type(1),
+.pestanas>input:nth-of-type(2):checked~.cuerpo:nth-of-type(2),
+.pestanas>input:nth-of-type(3):checked~.cuerpo:nth-of-type(3),
+.pestanas>input:nth-of-type(4):checked~.cuerpo:nth-of-type(4){display:block}
+.pestanas>.cuerpo .slider:last-of-type{margin-bottom:.4em}
+.pestanas>.cuerpo h4{margin:0 0 .5em;font-size:.92em;font-weight:600;color:var(--muted)}
 .ctl{width:340px;max-width:100%}
+/* Envoltorio que se desplaza por dentro cuando la ventana es baja, para que la
+   sección de Kerning tampoco necesite la barra de scroll de la página. */
+.scrollsec{max-height:calc(100vh - 130px);overflow:auto}
 .slider{margin-bottom:1em}
 .slider .head{display:flex;justify-content:space-between;font-size:.9em;color:var(--muted);margin-bottom:.2em}
 .slider .head b{color:var(--text);font-variant-numeric:tabular-nums}
@@ -1265,7 +1281,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 #updBanner{display:none;background:#2a3a22;border-bottom:1px solid var(--ok);padding:.5em 1em;font-size:.9em;align-items:center;gap:.8em}
 #updBanner.on{display:flex}
 /* ---------- Pantalla de inicio ---------- */
-.hero{background:linear-gradient(135deg,#22301c 0%,var(--panel) 60%);border:1px solid #3d5a2d;border-radius:14px;padding:1.5em;margin-bottom:1.2em}
+.hero{background:linear-gradient(135deg,#22301c 0%,var(--panel) 60%);border:1px solid #3d5a2d;border-radius:14px;padding:1.1em 1.3em;margin-bottom:.9em}
 .hero h2{font-size:1.45em;margin:0 0 .35em}
 .hero p{color:#cfcfcf;margin:0 0 1em;max-width:60ch}
 .hero .acciones{display:flex;gap:.6em;flex-wrap:wrap}
@@ -1273,15 +1289,19 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 #impZona:hover,#impZona:focus{background:#26301f;border-color:var(--ok);outline:none}
 #impZona .grande{font-size:1.1em;font-weight:700;color:var(--text);display:block;margin-bottom:.25em}
 #impZona .chico{color:var(--muted);font-size:.9em}
-.accesos{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.7em}
-.acceso{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.85em 1em;cursor:pointer;text-align:left;color:var(--text);font-size:.95em}
+.accesos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.5em}
+.acceso{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.55em .8em;cursor:pointer;text-align:left;color:var(--text);font-size:.92em}
 .acceso:hover,.acceso:focus{border-color:var(--ok);background:#2c3427;outline:none}
-.acceso b{display:block;margin-bottom:.15em}
-.acceso span{color:var(--muted);font-size:.86em;line-height:1.35}
-/* ---------- Atajos de teclado por sección ---------- */
-.atajos{display:flex;flex-wrap:wrap;align-items:center;gap:.35em;margin:0 0 .9em;font-size:.86em;color:var(--muted)}
-.atajos .sep{color:#555}
-.atajos .rot{color:#888;margin-right:.15em}
+.acceso b{display:block;margin-bottom:.1em}
+.acceso span{color:var(--muted);font-size:.82em;line-height:1.25;display:block}
+/* ---------- Atajos de teclado por sección ----------
+   Cada atajo es un grupo: las teclas llevan recuadro, la explicación va sin
+   borde y separada, para que se distinga qué se aprieta de para qué sirve. */
+.atajos{display:flex;flex-wrap:wrap;align-items:center;gap:.4em .9em;margin:0 0 .9em;font-size:.86em;color:var(--muted)}
+.atajos .rot{color:#888;margin-right:.1em}
+.atajo{display:inline-flex;align-items:center;gap:.28em}
+.atajo .teclas{display:inline-flex;align-items:center;gap:.22em}
+.atajo .para{color:#8fa88a;margin-left:.35em;font-style:italic}
 kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;border-radius:5px;
   padding:.08em .42em;font-family:ui-monospace,Consolas,monospace;font-size:.92em;color:#ddd;white-space:nowrap}
 #updBanner a{color:var(--ok)}
@@ -1308,12 +1328,10 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <button data-tab="accent">Tildes</button>
 <button data-tab="words">Palabras</button>
 <button data-tab="font">Fuente</button>
-<button data-tab="log">Registro</button>
-<p class="muted" style="margin-top:auto" id="navcount"></p>
 <p id="navAyuda">
   <kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> recorren<br>
   <kbd class="tecla">Ctrl</kbd>+<kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> cambian de sección<br>
-  <kbd class="tecla">Alt</kbd>+<kbd class="tecla">↑</kbd><kbd class="tecla">↓</kbd> abren los paneles<br>
+  <kbd class="tecla">Alt</kbd>+<kbd class="tecla">↑</kbd><kbd class="tecla">↓</kbd> cambian de pestaña<br>
   <kbd class="tecla">?</kbd> abre el tutorial
 </p>
 </nav>
@@ -1332,50 +1350,51 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <div class="row">
 <svg id="dimSvg" class="preview" viewBox="-300 -200 2000 1400" style="width:520px;height:360px"></svg>
 <div class="panel ctl">
-  <label class="chk"><input type="checkbox" id="lockChk" checked> Escala bloqueada a proporción</label>
-  <div class="row" style="gap:.5em;margin:.4em 0 1em">
-    <button class="btn sec" id="resetRatio">Proporción original</button>
-    <button class="btn sec" id="resetRot">Sin rotación</button>
-  </div>
-  <div id="sliders"></div>
-  <p class="muted" id="dimInfo"></p>
-
-  <details class="plegable" style="margin-top:1em">
-    <summary>Trazado del pincel <span class="pista">Alt+Enter</span></summary>
+  <div class="pestanas" id="pes-dim" style="margin-top:0">
+    <input type="radio" name="p-dim" id="p-dim-1" checked><label for="p-dim-1">Ajustes</label>
+    <input type="radio" name="p-dim" id="p-dim-2"><label for="p-dim-2">Trazado del pincel</label>
+    <input type="radio" name="p-dim" id="p-dim-3"><label for="p-dim-3">Comparar tamaños</label>
     <div class="cuerpo">
-        <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
-      <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
-      <div class="meter"><i id="m_blur"></i></div></div>
-    <div class="slider"><div class="head"><span>Esquinas (alphamax)</span><b id="v_alphamax"></b></div>
-      <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4">
-      <div class="meter"><i id="m_alphamax"></i></div></div>
-    <div class="slider"><div class="head"><span>Umbral de tinta</span><b id="v_threshold"></b></div>
-      <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5">
-      <div class="meter"><i id="m_threshold"></i></div></div>
-    <div class="slider"><div class="head"><span>Mancha mínima (px)</span><b id="v_turdsize"></b></div>
-      <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20">
-      <div class="meter"><i id="m_turdsize"></i></div></div>
-    <div class="slider"><div class="head"><span>Tolerancia de curva</span><b id="v_opttolerance"></b></div>
-      <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1">
-      <div class="meter"><i id="m_opttolerance"></i></div></div>
-    <div class="row" style="gap:.4em">
-      <button class="btn sec" id="traceDefaults">Valores por defecto</button>
-      <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
+      <label class="chk"><input type="checkbox" id="lockChk" checked> Escala bloqueada a proporción</label>
+      <div class="row" style="gap:.5em;margin:.4em 0 .8em">
+        <button class="btn sec" id="resetRatio">Proporción original</button>
+        <button class="btn sec" id="resetRot">Sin rotación</button>
+      </div>
+      <div id="sliders"></div>
+      <p class="muted" id="dimInfo" style="margin-bottom:0"></p>
     </div>
-    <p class="muted" id="traceInfo" style="font-size:.85em"></p>
-    </div>
-  </details>
-
-  <details class="plegable" style="margin-top:1em">
-    <summary>Comparar tamaños <span class="pista">Alt+Enter</span></summary>
     <div class="cuerpo">
+      <h4>Trazado del pincel</h4>
+      <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
+        <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
+        <div class="meter"><i id="m_blur"></i></div></div>
+      <div class="slider"><div class="head"><span>Esquinas (alphamax)</span><b id="v_alphamax"></b></div>
+        <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4">
+        <div class="meter"><i id="m_alphamax"></i></div></div>
+      <div class="slider"><div class="head"><span>Umbral de tinta</span><b id="v_threshold"></b></div>
+        <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5">
+        <div class="meter"><i id="m_threshold"></i></div></div>
+      <div class="slider"><div class="head"><span>Mancha mínima (px)</span><b id="v_turdsize"></b></div>
+        <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20">
+        <div class="meter"><i id="m_turdsize"></i></div></div>
+      <div class="slider"><div class="head"><span>Tolerancia de curva</span><b id="v_opttolerance"></b></div>
+        <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1">
+        <div class="meter"><i id="m_opttolerance"></i></div></div>
+      <div class="row" style="gap:.4em">
+        <button class="btn sec" id="traceDefaults">Valores por defecto</button>
+        <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
+      </div>
+      <p class="muted" id="traceInfo" style="font-size:.85em;margin-bottom:0"></p>
+    </div>
+    <div class="cuerpo">
+      <h4>Comparar tamaños</h4>
       <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
-      <button class="btn sec" id="cmpAdd">Añadir actual</button>
-      <label>Base <select id="cmpBase"></select></label>
+        <button class="btn sec" id="cmpAdd">Añadir actual</button>
+        <label>Base <select id="cmpBase"></select></label>
+      </div>
+      <div id="cmpChips"></div>
     </div>
-    <div id="cmpChips"></div>
-    </div>
-  </details>
+  </div>
 </div>
 </div>
 </section>
@@ -1387,6 +1406,7 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   </div>
 
   <div id="ksub-pair" class="ksub active">
+    <div class="scrollsec">
     <h2>Kerning Manual por Par</h2>
     <p class="muted" style="margin:.2em 0 1em">
       Paso <b id="kmStep">1/3 — Izquierda</b>. Flechas navegan · Shift extiende · Ctrl+Enter toggle · <b>Enter avanza</b> · <b>Esc vuelve</b>.
@@ -1428,9 +1448,11 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
       </tr></thead>
       <tbody id="kerntable"></tbody>
     </table>
+    </div>
   </div>
 
   <div id="ksub-base" class="ksub">
+    <div class="scrollsec">
     <h2>Kerning Base por Lote</h2>
     <p class="muted" style="margin-top:0">
       Modifica el kerning base (izquierda/derecha) de las letras del lote.
@@ -1476,6 +1498,7 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
         <button class="btn sec" id="kbDelete" style="align-self:flex-end" title="Pone izquierda y derecha en 0 para todo el lote">Restablecer a 0</button>
       </div>
     </div>
+    </div>
   </div>
 </section>
 
@@ -1501,52 +1524,45 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   <button class="acceso" data-ir="kern"><b>Kerning</b><span>El espacio entre pares de letras</span></button>
   <button class="acceso" data-ir="words"><b>Palabras</b><span>Probá texto real con la fuente</span></button>
   <button class="acceso" data-ir="accent"><b>Tildes</b><span>Ajustá las vocales acentuadas</span></button>
-  <button class="acceso" data-ir="font"><b>Fuente</b><span>Conjuntos, nombre, construir y actualizaciones</span></button>
-  <button class="acceso" data-ir="log"><b>Registro</b><span>Qué pasó y qué falló</span></button>
+  <button class="acceso" data-ir="font"><b>Fuente</b><span>Nombre, conjuntos y construir</span></button>
 </div>
 
-<details class="plegable">
-  <summary>Formato de la rejilla <span class="muted" style="font-weight:400">10 columnas de 1000 px</span> <span class="pista">Alt+Enter</span></summary>
-  <div class="cuerpo">
-    <div id="impFormato" class="muted">Cargando…</div>
-    <p style="margin-bottom:0;margin-top:.8em">
-      <a class="btn" href="/api/import/plantilla.svg" download="fontiador-plantilla.svg"
-         style="text-decoration:none;display:inline-block">Descargar plantilla (SVG)</a>
-      <a class="btn sec" href="/api/import/plantilla.png" download="fontiador-plantilla.png"
-         style="text-decoration:none;display:inline-block;margin-left:.4em">Versión PNG</a>
-    </p>
-  </div>
-</details>
-
-<div class="panel" style="margin-top:.7em">
-  <p style="margin-top:0"><b>Versión <span id="verActual">…</span></b>
-     <span class="muted" id="updEstado" style="margin-left:.5em">Todavía no se comprobó si hay actualizaciones.</span></p>
+<div class="panel" style="margin-top:.8em">
+  <p style="margin:0 0 .5em"><b>Plantilla base</b>
+     <span class="muted" id="impFormato" style="margin-left:.5em">Cargando…</span></p>
   <p style="margin:0">
-    <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
-    <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
-       style="text-decoration:none;display:none;margin-left:.4em">Abrir la descarga</a>
+    <a class="btn" href="/api/import/plantilla.svg" download="fontiador-plantilla.svg"
+       style="text-decoration:none;display:inline-block">Descargar plantilla (SVG)</a>
+    <a class="btn sec" href="/api/import/plantilla.png" download="fontiador-plantilla.png"
+       style="text-decoration:none;display:inline-block;margin-left:.4em">Versión PNG</a>
   </p>
-  <details id="updNotas" style="display:none;margin-top:.6em">
-    <summary style="cursor:pointer">Ver qué cambió en la versión nueva</summary>
-    <pre id="updNotasTxt" style="max-height:200px"></pre>
-  </details>
 </div>
 
-<details class="plegable">
-  <summary>Correspondencia de cada celda <span class="pista">Alt+Enter</span></summary>
-  <div class="cuerpo"><div id="impOrden" style="max-height:280px;overflow:auto"></div></div>
-</details>
-
-<details class="plegable">
-  <summary>Carpetas vigiladas <span class="pista">Alt+Enter</span></summary>
+<div class="pestanas" id="pes-imp">
+  <input type="radio" name="p-imp" id="p-imp-1" checked><label for="p-imp-1">Registro</label>
+  <input type="radio" name="p-imp" id="p-imp-2"><label for="p-imp-2">Formato</label>
+  <input type="radio" name="p-imp" id="p-imp-3"><label for="p-imp-3">Versión</label>
   <div class="cuerpo">
-    <div id="impCarpetas" class="muted">Cargando…</div>
-    <p style="margin-bottom:0;margin-top:.8em">
-      <button class="btn sec" id="impClearErr">Vaciar errores</button>
-      <button class="btn sec" id="impClearProc" style="margin-left:.4em">Vaciar procesados</button>
-    </p>
+    <h4>Qué pasó y qué falló</h4>
+    <pre id="log" style="margin:0"></pre>
   </div>
-</details>
+  <div class="cuerpo">
+    <h4>Cómo tiene que ser la rejilla</h4>
+    <div id="impFormatoDet" class="muted">Cargando…</div>
+  </div>
+  <div class="cuerpo">
+    <h4>Versión <span id="verActual">…</span></h4>
+    <p class="muted" id="updEstado" style="margin:.2em 0 .7em">Todavía no se comprobó si hay actualizaciones.</p>
+    <p style="margin:0">
+      <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
+      <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
+         style="text-decoration:none;display:none;margin-left:.4em">Abrir la descarga</a>
+    </p>
+    <div id="updNotas" style="display:none;margin-top:.6em">
+      <pre id="updNotasTxt" style="max-height:140px"></pre>
+    </div>
+  </div>
+</div>
 </section>
 
 <section id="tab-words">
@@ -1586,28 +1602,29 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 
 <section id="tab-font">
 <h2>Fuente</h2>
-<div class="panel" style="max-width:520px">
+<div class="panel" style="max-width:560px">
 <p><label>Familia <input type="text" id="family"></label></p>
 <p><label>Estilo <input type="text" id="style" size="10"></label></p>
-<p><button class="btn" id="build">Reconstruir fuente</button></p>
-<p class="muted" id="out"></p>
-<p style="margin-top:1.4em;border-top:1px solid var(--line);padding-top:1em">
-  <b>Conjuntos de caracteres</b><br>
-  <span class="muted">Qué entra en la fuente.</span>
-</p>
-<label class="chk"><input type="checkbox" id="cs_upper"> Mayúsculas</label>
-<label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
-<label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
-<label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
-<p>
-  <button class="btn sec" id="tourReset">↻ Restablecer tutoriales</button>
-</p>
-</div>
-</section>
+<p style="margin-bottom:.6em"><button class="btn" id="build">Reconstruir fuente</button>
+   <button class="btn sec" id="tourReset" style="margin-left:.4em">↻ Restablecer tutoriales</button></p>
+<p class="muted" id="out" style="margin-top:0"></p>
 
-<section id="tab-log">
-<h2>Registro</h2>
-<pre id="log"></pre>
+<div class="pestanas" id="pes-font">
+  <input type="radio" name="p-font" id="p-font-1" checked><label for="p-font-1">Conjuntos</label>
+  <input type="radio" name="p-font" id="p-font-2"><label for="p-font-2">Avanzado</label>
+  <div class="cuerpo">
+    <h4>Qué caracteres entran en la fuente</h4>
+    <label class="chk"><input type="checkbox" id="cs_upper"> Mayúsculas</label>
+    <label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
+    <label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
+    <label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
+  </div>
+  <div class="cuerpo">
+    <h4>Datos del proyecto</h4>
+    <div id="proyInfo" class="muted">Cargando…</div>
+  </div>
+</div>
+</div>
 </section>
 
 </main>
@@ -2403,13 +2420,12 @@ function catChars(cat){ return [...S.chars].filter(c => cat === 'todas' ? true :
    Cada sección muestra los suyos arriba, con las teclas dibujadas igual que en
    el menú. Se generan desde acá para no repetir el marcado en el HTML. */
 const ATAJOS = {
-  imp:    [['Alt','+','↑','↓','paneles'], ['?','tutorial']],
-  dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Alt','+','Enter','panel'], ['?','tutorial']],
+  imp:    [['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
+  dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
   kern:   [['←','→','recorrer'], ['Shift','+','flecha','rango'], ['Enter','aplicar'], ['Esc','volver'], ['Ctrl','+','Enter','alternar'], ['🔒','fijar'], ['?','tutorial']],
   accent: [['←','→','recorrer'], ['Enter','aplicar'], ['?','tutorial']],
   words:  [['escribir','probar'], ['?','tutorial']],
-  font:   [['Enter','construir'], ['?','tutorial']],
-  log:    [['?','tutorial']],
+  font:   [['Enter','construir'], ['Alt','+','↑','↓','pestañas'], ['?','tutorial']],
 };
 
 function chipsTeclas(lista){
@@ -2420,19 +2436,34 @@ function chipsTeclas(lista){
   rot.textContent = 'Atajos:';
   caja.appendChild(rot);
   for (const grupo of lista){
-    grupo.forEach((t) => {
-      if (t === '+'){
+    // El último elemento del grupo es la explicación; el resto, las teclas.
+    const teclas = grupo.slice(0, -1);
+    const para = grupo[grupo.length - 1];
+    const cajon = document.createElement('span');
+    cajon.className = 'atajo';
+    const kk = document.createElement('span');
+    kk.className = 'teclas';
+    for (const t of teclas){
+      if (t === '+'){                       // el signo va suelto, sin recuadro
         const s = document.createElement('span');
-        s.className = 'sep';
         s.textContent = '+';
-        caja.appendChild(s);
-        return;
+        s.style.color = '#666';
+        kk.appendChild(s);
+        continue;
       }
       const el = document.createElement('kbd');
       el.className = 'tecla';
       el.textContent = t;
-      caja.appendChild(el);
-    });
+      kk.appendChild(el);
+    }
+    cajon.appendChild(kk);
+    if (para){
+      const d = document.createElement('span');
+      d.className = 'para';
+      d.textContent = para;
+      cajon.appendChild(d);
+    }
+    caja.appendChild(cajon);
   }
   return caja;
 }
@@ -2446,6 +2477,72 @@ function pintarAtajos(){
     const h2 = sec.querySelector('h2');
     if (!h2) continue;
     h2.insertAdjacentElement('afterend', chipsTeclas(lista));
+  }
+}
+
+/* Deja el cuerpo de cada pestaña con la altura que sobra hasta el pie de la
+   ventana. Así una pestaña larga se desplaza por dentro y la página no crece:
+   ninguna sección necesita la barra de scroll. */
+function ajustarAltoPestanas(){
+  // El fondo es la ventana, no el fondo de <main>: si main ya desborda, su
+  // rectificado queda por debajo de la pantalla y el cálculo daría de más.
+  const fondo = window.innerHeight - 10;
+  for (const g of document.querySelectorAll('.pestanas')){
+    const r = g.getBoundingClientRect();
+    // Cuánto ocupa la tira de pestañas. Puede pasar a dos filas si el ancho es
+    // chico, así que se mide desde la primera etiqueta hasta la última.
+    let altoTira = 30;
+    const etiquetas = g.querySelectorAll('label');
+    if (etiquetas.length){
+      let arriba = Infinity, abajo = 0;
+      for (const e of etiquetas){
+        const re = e.getBoundingClientRect();
+        arriba = Math.min(arriba, re.top);
+        abajo = Math.max(abajo, re.bottom);
+      }
+      altoTira = Math.max(24, Math.ceil(abajo - arriba)) + 16;
+    }
+    const disponible = Math.floor(fondo - r.top - altoTira - 16);
+    g.style.setProperty('--alto-cuerpo', Math.max(90, disponible) + 'px');
+    const caja = g.querySelectorAll(':scope > .cuerpo');
+    for (const c of caja) c.style.maxHeight = Math.max(90, disponible) + 'px';
+
+    // Si el grupo vive dentro de una fila con otra columna (Dimensiones), hay
+    // que acotar también la columna que lo contiene: es ella la que fija el alto
+    // de la fila. Cuidado: esa columna ES un ancestro del grupo, así que hay que
+    // subir por los padres hasta el hijo directo de la fila.
+    const fila = g.closest('.row');
+    if (fila){
+      // Se deja un margen: si el redondeo del navegador se pasa por un píxel,
+      // aparece la barra de scroll igual.
+      const alto = Math.max(120, Math.floor(fondo - fila.getBoundingClientRect().top - 20));
+      let columna = g;
+      while (columna.parentElement && columna.parentElement !== fila) columna = columna.parentElement;
+      for (const hijo of fila.children){
+        if (hijo === columna){
+          hijo.style.maxHeight = alto + 'px';
+          hijo.style.overflow = 'auto';
+        } else if (!hijo.contains(g)){
+          // La otra columna: se acota para que la fila no crezca de más.
+          hijo.style.maxHeight = alto + 'px';
+          if (hijo.tagName !== 'svg') hijo.style.overflow = 'auto';
+        }
+      }
+    }
+  }
+
+  // Último recurso: si con la ventana así de baja el contenido de arriba ya no
+  // deja lugar, la sección entera se desplaza por dentro. La página nunca.
+  for (const sec of document.querySelectorAll('section')){
+    if (!sec.classList.contains('active')){ sec.style.maxHeight = ''; sec.style.overflow = ''; continue; }
+    const sobra = sec.scrollHeight - fondo;
+    if (sobra > 2){
+      sec.style.maxHeight = Math.max(200, window.innerHeight - 36) + 'px';
+      sec.style.overflow = 'auto';
+    } else {
+      sec.style.maxHeight = '';
+      sec.style.overflow = '';
+    }
   }
 }
 
@@ -2509,7 +2606,7 @@ async function loadStatus(){
   try { s = await api('/api/status'); } catch (e) { return; }
   S.status = s;
   if (Date.now() > S.busyUntil) S.adj = s.adjust || {};
-  if ($('navcount')) {
+  if ($('jobBar')) {
     const j = s.job || {};
     const bar = $('jobBar');
     if (j.active){
@@ -2524,14 +2621,20 @@ async function loadStatus(){
     } else {
       bar.style.display = 'none';
     }
-    // El estado de las carpetas vigiladas se muestra en Inicio: acá alcanza con
-    // el resumen de lo que hay cargado.
-    $('navcount').innerHTML = s.glyphs + ' glifos · ' + s.kerning.length + ' pares manuales';
   }
   if ($('log')) $('log').textContent = s.log.join('\n');
   if ($('out')) $('out').textContent = s.last_output ? 'Última fuente: ' + s.last_output : '';
   for (const k of ['upper','lower','digits','punct']) {
     if ($('cs_'+k)) $('cs_'+k).checked = s.charsets[k];
+  }
+  // Pestaña "Avanzado" de Fuente: los datos que hacen falta para diagnosticar.
+  if ($('proyInfo')) {
+    const m = (s.metrics || {});
+    $('proyInfo').innerHTML =
+      'Glifos cargados: <b>' + s.glyphs + '</b><br>' +
+      'Pares con ajuste manual: <b>' + (s.kerning || []).length + '</b><br>' +
+      'UPM: <b>' + (m.upm || '—') + '</b> · línea base: <b>' + (m.baseline_px || '—') + ' px</b><br>' +
+      'Avance por defecto: <b>' + (m.default_advance || '—') + '</b>';
   }
 
   const changed = (S.version !== s.version) || (S.chars !== s.all_chars);
@@ -3072,35 +3175,11 @@ function impFormatoHTML(f, modo, base){
       (base || '') + '</b> (' + (modo === 'usuario' ? 'carpeta de datos del usuario' : 'carpeta de la app') + ').</p>';
 }
 
-function impOrdenHTML(orden){
-  if (!orden) return '';
-  let html = '<table style="font-size:.85em"><thead><tr><th>#</th><th>Fila</th><th>Col</th>' +
-             '<th>Carácter</th><th>Esquina (x, y)</th></tr></thead><tbody>';
-  for (const fila of orden){
-    for (const c of fila){
-      const esc = (c.char === '<' ? '&lt;' : c.char === '>' ? '&gt;' : c.char === '&' ? '&amp;' : c.char);
-      html += '<tr><td>' + c.i + '</td><td>' + c.fila + '</td><td>' + c.col + '</td>' +
-              '<td style="font-size:1.3em">' + esc + '</td>' +
-              '<td class="muted">' + c.x + ', ' + c.y + '</td></tr>';
-    }
-  }
-  return html + '</tbody></table>';
-}
-
-function impCarpetasHTML(carpetas){
-  if (!carpetas || !carpetas.length) return '<p class="muted">Sin carpetas configuradas.</p>';
-  let html = '';
-  for (const c of carpetas){
-    const pend = c.pendientes.length, proc = c.procesado.length, err = c.errores.length;
-    html += '<div style="margin-bottom:.8em"><code style="font-size:.85em">' + c.ruta + '</code><br>' +
-      '<span class="muted">' + pend + ' pendiente(s) · ' + proc + ' procesado(s) · ' +
-      (err ? '<b style="color:var(--accent)">' + err + ' con error</b>' : '0 con error') + '</span>';
-    if (pend) html += '<br><span class="muted">En espera: ' + c.pendientes.join(', ') + '</span>';
-    if (err) html += '<br><span style="color:var(--accent);font-size:.9em">Con error: ' +
-      c.errores.join(', ') + '</span>';
-    html += '</div>';
-  }
-  return html;
+/* Resumen corto para el cartel de la plantilla: una línea, sin tabla. */
+function impFormatoResumen(f){
+  if (!f) return '';
+  return f.columnas + ' columnas × ' + f.filas + ' filas · celda ' + f.celda + ' px · ' +
+         f.caracteres + ' caracteres · línea base ' + f.linea_base + ' px';
 }
 
 async function impRefresh(){
@@ -3108,9 +3187,8 @@ async function impRefresh(){
     const r = await api('/api/import/status');
     if (!r || r.error) return;
     if ($('impModo')) $('impModo').textContent = '(' + r.datos + ')';
-    if ($('impFormato')) $('impFormato').innerHTML = impFormatoHTML(r.formato, r.modo, r.base_dir);
-    if ($('impOrden')) $('impOrden').innerHTML = impOrdenHTML(r.orden);
-    if ($('impCarpetas')) $('impCarpetas').innerHTML = impCarpetasHTML(r.carpetas);
+    if ($('impFormato')) $('impFormato').textContent = impFormatoResumen(r.formato);
+    if ($('impFormatoDet')) $('impFormatoDet').innerHTML = impFormatoHTML(r.formato, r.modo, r.base_dir);
     if ($('impPickHint')){
       $('impPickHint').textContent = r.dialogo
         ? 'Se abre el diálogo de archivos de ' + r.plataforma + '. Podés elegir varios a la vez.'
@@ -3138,13 +3216,6 @@ if ($('impRescan')) $('impRescan').onclick = async () => {
   b.disabled = false; b.textContent = 'Re-escanear inbox';
   impRefresh(); loadStatus();
 };
-for (const [id, donde] of [['impClearErr','errores'], ['impClearProc','procesado']]){
-  if ($(id)) $(id).onclick = async () => {
-    const r = await api('/api/import/clear', {donde: donde});
-    impMsg(r && r.ok ? ('Se borraron ' + r.borrados + ' archivo(s) de ' + donde + '.') : 'No se pudo limpiar.', 'ok');
-    impRefresh();
-  };
-}
 
 /* Importaciones es la pantalla de inicio, así que se carga sola al abrir. */
 impRefresh();
@@ -3736,7 +3807,7 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
   /* Moverse entre secciones con Ctrl (o Alt) + ← →, desde cualquier lado.
      Se usa el modificador para no pisar las flechas, que sirven para moverse
      dentro de cada sección (la rejilla, el asistente de kerning). Las flechas
-     verticales quedan para los paneles plegables. */
+     verticales quedan para las pestañas. */
   document.addEventListener('keydown', e => {
     if (!(e.ctrlKey || e.altKey || e.metaKey)) return;
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -3757,50 +3828,53 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
     if (typeof tourReplay === 'function') tourReplay();
   });
 
-  /* Paneles plegables: Ctrl+↑ y Ctrl+↓ pasan de uno a otro y los abren o
-     cierran. Alt+Enter hace lo mismo con el primero de la sección. */
-  const plegables = () => Array.prototype.slice.call(
-    document.querySelectorAll('section.active details.plegable'));
-  const irAPlegable = (paso) => {
-    const lista = plegables();
+  /* Pestañas: Alt+↑ y Alt+↓ (o Alt+← / Alt+→) pasan de una a otra dentro de la
+     sección. Cambian en el mismo lugar, así la página nunca crece. */
+  const grupos = () => Array.prototype.slice.call(
+    document.querySelectorAll('section.active .pestanas'));
+  const irAPestana = (paso) => {
+    const lista = grupos().filter(g => g.querySelector('input[type=radio]'));
     if (!lista.length) return;
-    const actual = lista.indexOf(document.activeElement);
-    let i;
-    if (actual < 0){
-      i = paso > 0 ? 0 : lista.length - 1;
-    } else if (paso > 0){
-      i = Math.min(actual + 1, lista.length - 1);
+    const activo = lista.find(g => g.querySelector('input:checked'));
+    const desde = lista.indexOf(activo);
+    const gi = paso > 0
+      ? (desde + 1) % lista.length
+      : (desde < 0 ? lista.length - 1 : (desde - 1 + lista.length) % lista.length);
+    const g = lista[gi];
+    const radios = g.querySelectorAll('input[type=radio]');
+    // Dentro del grupo se avanza de pestaña; al cambiar de grupo se entra por la
+    // primera (o la última, si se va hacia atrás).
+    let elegido;
+    if (desde === gi){
+      const actual = Array.prototype.findIndex.call(radios, r => r.checked);
+      elegido = (actual + paso + radios.length) % radios.length;
     } else {
-      i = Math.max(actual - 1, 0);
+      elegido = paso > 0 ? 0 : radios.length - 1;
     }
-    const d = lista[i];
-    d.open = true;                       // se abre al llegar, para ver qué hay
-    d.setAttribute('tabindex', '-1');
-    d.focus();
-    d.scrollIntoView({ block: 'nearest' });
+    const radio = radios[elegido];
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change', { bubbles: true }));
+    const etiqueta = g.querySelector('label[for="' + radio.id + '"]');
+    if (etiqueta) etiqueta.focus();
   };
   document.addEventListener('keydown', e => {
     if (!(e.ctrlKey || e.altKey)) return;
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const vertical = e.key === 'ArrowDown' || e.key === 'ArrowUp';
+    const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+    if (!vertical && !horizontal) return;
     if (typeof TOUR !== 'undefined' && TOUR.active) return;
+    // Ctrl+← / Ctrl+→ cambian de sección: no se tocan.
+    if (e.ctrlKey && horizontal) return;
+    // Ctrl+↑↓ quedan libres para el paso de kerning; las pestañas usan Alt.
+    if (e.ctrlKey && vertical) return;
     e.preventDefault();
-    irAPlegable(e.key === 'ArrowDown' ? 1 : -1);
+    irAPestana((e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : -1);
   });
   document.addEventListener('keydown', e => {
     if (!e.altKey || e.key !== 'Enter') return;
     if (typeof TOUR !== 'undefined' && TOUR.active) return;
-    const enfocado = document.activeElement;
-    if (enfocado && enfocado.tagName === 'DETAILS' && enfocado.classList.contains('plegable')){
-      enfocado.open = !enfocado.open;
-    } else {
-      const primero = plegables()[0];
-      if (primero){
-        primero.open = !primero.open;
-        primero.setAttribute('tabindex', '-1');
-        primero.focus();
-      }
-    }
     e.preventDefault();
+    irAPestana(1);
   });
 
   /* Los accesos de Inicio también responden a Enter y a la barra espaciadora. */
@@ -3812,6 +3886,18 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
 
   /* Los atajos de cada sección se dibujan como fichas, igual que en el menú. */
   if (typeof pintarAtajos === 'function') pintarAtajos();
+  if (typeof ajustarAltoPestanas === 'function'){
+    ajustarAltoPestanas();
+    window.addEventListener('resize', ajustarAltoPestanas);
+    // Al cambiar de sección o de pestaña cambia el alto disponible. Ojo: hacer
+    // clic en la etiqueta de un radio no dispara "change" (solo lo hace si se
+    // cambia .checked por código), así que se escucha además "input" y "click".
+    for (const ev of ['input', 'change', 'click']){
+      document.addEventListener(ev, e => {
+        if (e.target.closest && e.target.closest('.pestanas, nav')) setTimeout(ajustarAltoPestanas, 0);
+      }, true);
+    }
+  }
 
   /* Se dejan los textos del tutorial cargados desde el arranque: si no, la tecla
      "?" y el aviso automático no encuentran nada con qué armar el tutorial. */

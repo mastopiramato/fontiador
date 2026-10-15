@@ -108,6 +108,12 @@ def test_nombres_de_modulos():
               os.path.isfile(os.path.join(RAIZ, mod + ".py")))
 
 
+def _dentro_de(page, seccion, aguja):
+    """True si 'aguja' aparece dentro de la sección indicada."""
+    m = re.search(r'<section id="%s".*?(?=<section id=|\Z)' % seccion, page, re.S)
+    return bool(m) and aguja in m.group(0)
+
+
 def test_secciones():
     """La estructura de secciones tiene que coincidir con el menú."""
     print("Secciones y menú")
@@ -125,8 +131,17 @@ def test_secciones():
 
     # Conjuntos se integró a Fuente: no debe volver como pestaña propia.
     check("Conjuntos ya no es una pestaña", "sets" not in menu)
+    check("Registro ya no es una página", "log" not in menu)
     check("las casillas de conjuntos viven en Fuente",
           page.find('id="cs_upper"') > page.find('<section id="tab-font"'))
+    check("el registro vive en Inicio", _dentro_de(page, "tab-imp", 'id="log"'))
+    check("la barra lateral no muestra el contador", "navcount" not in page)
+
+    # Los bloques largos tienen que ser pestañas, no paneles que crezcan la
+    # página: si no, vuelve la barra de scroll.
+    check("no quedan paneles desplegables", 'plegable' not in page)
+    check("hay pestañas en Dimensiones, Inicio y Fuente",
+          all(('id="pes-%s"' % t) in page for t in ("dim", "imp", "font")))
 
     # Tildes va antes que Palabras.
     check("Tildes está antes que Palabras",
@@ -162,8 +177,9 @@ def test_tutorial():
     check("tutorial.json es JSON válido", True)
 
     # Cada sección de la app debería tener su tutorial. Conjuntos ya no es una
-    # sección: su paso quedó dentro del tutorial de Fuente.
-    secciones = ["imp", "dim", "kern", "words", "accent", "font", "log"]
+    # sección (su paso quedó en Fuente) y Registro tampoco: el registro es una
+    # pestaña de Inicio.
+    secciones = ["imp", "dim", "kern", "words", "accent", "font"]
     faltan = [k for k in secciones if k not in datos]
     check("hay un tutorial por sección", not faltan, "faltan %r" % faltan)
 
