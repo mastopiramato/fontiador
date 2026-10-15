@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.2"
+APP_VERSION = "0.2.3"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1264,6 +1264,12 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 .acceso:hover,.acceso:focus{border-color:var(--ok);background:#2c3427;outline:none}
 .acceso b{display:block;margin-bottom:.15em}
 .acceso span{color:var(--muted);font-size:.86em;line-height:1.35}
+/* ---------- Atajos de teclado por sección ---------- */
+.atajos{display:flex;flex-wrap:wrap;align-items:center;gap:.35em;margin:0 0 .9em;font-size:.86em;color:var(--muted)}
+.atajos .sep{color:#555}
+.atajos .rot{color:#888;margin-right:.15em}
+kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;border-radius:5px;
+  padding:.08em .42em;font-family:ui-monospace,Consolas,monospace;font-size:.92em;color:#ddd;white-space:nowrap}
 #updBanner a{color:var(--ok)}
 #updBanner button{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:.2em .6em;cursor:pointer}
 #tourCursor{position:fixed;z-index:399;display:none;border:2px solid var(--accent);border-radius:7px;pointer-events:none;transition:all .22s ease;box-shadow:0 0 0 3px rgba(240,111,192,.22)}
@@ -1285,9 +1291,8 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 <button data-tab="imp" class="active">Inicio</button>
 <button data-tab="dim">Dimensiones</button>
 <button data-tab="kern">Kerning</button>
-<button data-tab="words">Palabras</button>
 <button data-tab="accent">Tildes</button>
-<button data-tab="sets">Conjuntos</button>
+<button data-tab="words">Palabras</button>
 <button data-tab="font">Fuente</button>
 <button data-tab="log">Registro</button>
 <p class="muted" style="margin-top:auto" id="navcount"></p>
@@ -1388,6 +1393,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
     </div>
 
     <h2 style="margin-top:1.5em">Lote activo</h2>
+    <div id="kernCats" class="row" style="gap:.3em;margin-bottom:.3em"></div>
     <div class="chars batchgrid" data-side="pair" tabindex="0" style="margin-bottom:1em"></div>
 
     <h2 style="margin-top:1.5em">Pares con ajuste manual guardado</h2>
@@ -1421,9 +1427,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
     <svg id="basePrevSvg" class="preview" viewBox="-200 -200 2600 1400" style="width:100%;height:280px;margin-bottom:1em"></svg>
 
     <div class="panel" style="max-width:900px">
-      <p class="muted" style="margin-top:0">
-        Escribe letras o usa <b>Flechas</b>. <b>Shift+Flechas</b> extiende, <b>Enter</b> selecciona solo este, <b>Ctrl+Enter</b> agrega/quita.
-      </p>
+      <div id="kernCatsBase" class="row" style="gap:.3em;margin-bottom:.3em"></div>
       <div class="chars batchgrid" data-side="base" tabindex="0" style="margin-bottom:1em"></div>
 
       <div style="display:flex;gap:1.5em;flex-wrap:wrap;align-items:flex-start">
@@ -1481,8 +1485,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
   <button class="acceso" data-ir="kern"><b>Kerning</b><span>El espacio entre pares de letras</span></button>
   <button class="acceso" data-ir="words"><b>Palabras</b><span>Probá texto real con la fuente</span></button>
   <button class="acceso" data-ir="accent"><b>Tildes</b><span>Ajustá las vocales acentuadas</span></button>
-  <button class="acceso" data-ir="sets"><b>Conjuntos</b><span>Qué caracteres entran en la fuente</span></button>
-  <button class="acceso" data-ir="font"><b>Fuente</b><span>Nombre, estilo, construir y actualizaciones</span></button>
+  <button class="acceso" data-ir="font"><b>Fuente</b><span>Conjuntos, nombre, construir y actualizaciones</span></button>
   <button class="acceso" data-ir="log"><b>Registro</b><span>Qué pasó y qué falló</span></button>
 </div>
 
@@ -1546,17 +1549,6 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 </div>
 </section>
 
-<section id="tab-sets">
-<h2>Conjuntos de caracteres</h2>
-<div class="panel" style="max-width:420px">
-<label class="chk"><input type="checkbox" id="cs_upper"> Mayúsculas</label>
-<label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
-<label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
-<label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
-<p style="margin-top:1em"><button class="btn sec" id="tourReset">↻ Restablecer tutoriales</button></p>
-</div>
-</section>
-
 <section id="tab-font">
 <h2>Fuente</h2>
 <div class="panel" style="max-width:520px">
@@ -1565,8 +1557,19 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 <p><button class="btn" id="build">Reconstruir fuente</button></p>
 <p class="muted" id="out"></p>
 <p style="margin-top:1.4em;border-top:1px solid var(--line);padding-top:1em">
+  <b>Conjuntos de caracteres</b><br>
+  <span class="muted">Qué entra en la fuente.</span>
+</p>
+<label class="chk"><input type="checkbox" id="cs_upper"> Mayúsculas</label>
+<label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
+<label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
+<label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
+<p style="margin-top:1.2em;border-top:1px solid var(--line);padding-top:1em">
   <b>Versión <span id="verActual">…</span></b><br>
   <span class="muted" id="updEstado">Todavía no se comprobó si hay actualizaciones.</span>
+</p>
+<p>
+  <button class="btn sec" id="tourReset">↻ Restablecer tutoriales</button>
 </p>
 <p>
   <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
@@ -2173,8 +2176,13 @@ function selectKbRangeInto(set, start, end){
 }
 function selectKbRange(start, end){ selectKbRangeInto(KB_SEL, start, end); }
 
+/* Filtro por categoría de las rejillas de kerning, igual que en Dimensiones:
+   sirve para acotar el lote a mayúsculas, minúsculas, números, etc. */
+let KB_CAT = 'todas';
+function gridChars(){ return catChars(KB_CAT); }
+
 function renderBatchGrids(){
-  const charsArr = [...S.chars];
+  const charsArr = gridChars();
   document.querySelectorAll('.batchgrid').forEach(grid => {
     grid.innerHTML = '';
     if (!charsArr.length){
@@ -2270,7 +2278,7 @@ function syncSelectionVisuals(){
   }
   const activeGrid = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('batchgrid')
     ? document.activeElement : null;
-  const charsArr = [...S.chars];
+  const charsArr = gridChars();
   document.querySelectorAll('.batchgrid').forEach(grid => {
     const set = gridSet(grid);
     for (const b of grid.querySelectorAll('button')){
@@ -2368,6 +2376,57 @@ const CAT_TEST = {
   tildes: c => 'ÁÉÍÓÚáéíóúÑñ'.includes(c)
 };
 function catChars(cat){ return [...S.chars].filter(c => cat === 'todas' ? true : CAT_TEST[cat](c)); }
+
+/* ---------- Atajos de teclado, como fichas ----------
+   Cada sección muestra los suyos arriba, con las teclas dibujadas igual que en
+   el menú. Se generan desde acá para no repetir el marcado en el HTML. */
+const ATAJOS = {
+  imp:    [['←','→','recorrer'], ['Ctrl','+','←','→','sección'], ['?','tutorial']],
+  dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Esc','limpiar'], ['?','tutorial']],
+  kern:   [['←','→','recorrer'], ['Shift','+','flecha','rango'], ['Enter','aplicar'], ['Esc','volver'], ['Ctrl','+','Enter','alternar'], ['🔒','fijar'], ['?','tutorial']],
+  accent: [['←','→','recorrer'], ['Enter','aplicar'], ['?','tutorial']],
+  words:  [['escribir','probar'], ['?','tutorial']],
+  font:   [['Enter','construir'], ['?','tutorial']],
+  log:    [['?','tutorial']],
+};
+
+function chipsTeclas(lista){
+  const caja = document.createElement('div');
+  caja.className = 'atajos';
+  const rot = document.createElement('span');
+  rot.className = 'rot';
+  rot.textContent = 'Atajos:';
+  caja.appendChild(rot);
+  for (const grupo of lista){
+    grupo.forEach((t) => {
+      if (t === '+'){
+        const s = document.createElement('span');
+        s.className = 'sep';
+        s.textContent = '+';
+        caja.appendChild(s);
+        return;
+      }
+      const el = document.createElement('kbd');
+      el.className = 'tecla';
+      el.textContent = t;
+      caja.appendChild(el);
+    });
+  }
+  return caja;
+}
+
+function pintarAtajos(){
+  for (const [tab, lista] of Object.entries(ATAJOS)){
+    const sec = $('tab-' + tab);
+    if (!sec) continue;
+    const previo = sec.querySelector(':scope > .atajos');
+    if (previo) previo.remove();
+    const h2 = sec.querySelector('h2');
+    if (!h2) continue;
+    h2.insertAdjacentElement('afterend', chipsTeclas(lista));
+  }
+}
+
 function catButtons(containerId, onPick){
   const box = $(containerId);
   if (!box) return;
@@ -2386,6 +2445,13 @@ function dimPickCat(k){
   if (k !== 'ninguna') for (const c of catChars(k)) KB_SEL.add(c);
   if (S.char) KB_SEL.add(S.char);
   syncSelectionVisuals();
+}
+
+function kbPickCat(k){
+  KB_CAT = k;
+  KB_CURSOR = 0;
+  KB_ANCHOR = 0;
+  renderBatchGrids();
 }
 
 // ---------- Tabla kerning manual ----------
@@ -2436,10 +2502,9 @@ async function loadStatus(){
     } else {
       bar.style.display = 'none';
     }
-    $('navcount').innerHTML = s.glyphs + ' glifos · ' + s.kerning.length + ' pares manuales<br><br>' +
-      'Vigilando:<br><span style="font-size:.8em">' + s.watch.inbox + '</span><br>' +
-      'Revisión: ' + s.watch.last_scan + ' · pendientes: ' + s.watch.pending +
-      (s.watch.errors ? ' · errores: ' + s.watch.errors : '');
+    // El estado de las carpetas vigiladas se muestra en Inicio: acá alcanza con
+    // el resumen de lo que hay cargado.
+    $('navcount').innerHTML = s.glyphs + ' glifos · ' + s.kerning.length + ' pares manuales';
   }
   if ($('log')) $('log').textContent = s.log.join('\n');
   if ($('out')) $('out').textContent = s.last_output ? 'Última fuente: ' + s.last_output : '';
@@ -2458,6 +2523,9 @@ async function loadStatus(){
     renderBatchGrids();
     if (!S.char && S.chars) selectChar(S.chars[0]);
     catButtons('dimCats', dimPickCat);
+    // Las rejillas de kerning tienen el mismo filtro por categoría.
+    catButtons('kernCats', kbPickCat);
+    catButtons('kernCatsBase', kbPickCat);
     renderCompare();
     fillTraceUI();
     drawDim(); drawPair(); drawBasePrev();
@@ -2605,7 +2673,7 @@ document.addEventListener('keydown', e => {
 
 document.querySelectorAll('.batchgrid').forEach(grid => {
   grid.addEventListener('keydown', e => {
-    const charsArr = [...S.chars];
+    const charsArr = gridChars();
     if (!charsArr.length) return;
     const k = e.key;
     const isBase = grid.dataset.side === 'base';
@@ -3672,6 +3740,9 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
       if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); b.click(); }
     };
   });
+
+  /* Los atajos de cada sección se dibujan como fichas, igual que en el menú. */
+  if (typeof pintarAtajos === 'function') pintarAtajos();
 
   /* Se dejan los textos del tutorial cargados desde el arranque: si no, la tecla
      "?" y el aviso automático no encuentran nada con qué armar el tutorial. */

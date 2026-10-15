@@ -1,191 +1,273 @@
 {
+  "imp": {
+    "title": "Inicio",
+    "steps": [
+      {
+        "target": "#impZona",
+        "title": "Empezá por acá",
+        "body": "Elegí el archivo que exportaste de tu programa de diseño. La app lo traza, arma los glifos y reconstruye la fuente sola.",
+        "keys": [
+          "Elegir archivo…"
+        ]
+      },
+      {
+        "target": "#impZona",
+        "title": "Qué archivos acepta",
+        "body": "PNG, JPG, SVG o la exportación **JSON** de glifos.\n- El **JSON** trae los vectores exactos: no hay que trazar nada.\n- Las **imágenes** se recortan celda por celda y se trazan.",
+        "keys": [
+          "PNG",
+          "JPG",
+          "SVG",
+          "JSON"
+        ]
+      },
+      {
+        "target": "#impAccesos",
+        "title": "Ir a cada sección",
+        "body": "Estos accesos llevan a las demás secciones. También podés usar las **flechas** del teclado, o **Ctrl + ←** y **Ctrl + →** para cambiar de sección desde cualquier lado.",
+        "keys": [
+          "←",
+          "→",
+          "Ctrl",
+          "+",
+          "flecha"
+        ]
+      },
+      {
+        "target": "#impCarpetas",
+        "title": "Qué pasó con cada archivo",
+        "body": "Acá ves lo que quedó pendiente, lo que se procesó y lo que falló. Si un render no tiene el tamaño esperado, el motivo queda en **Registro**.",
+        "keys": [
+          "pendientes",
+          "procesados",
+          "errores"
+        ]
+      }
+    ]
+  },
   "dim": {
     "title": "Dimensiones",
     "steps": [
-        {
-          "target": "#dimChars",
-          "title": "Elegí un carácter",
-          "body": "Cada botón es un glifo. La rejilla es la puerta de entrada a todo lo demás.",
-          "keys": ["clic"]
-        },
-        {
-          "target": "#dimChars",
-          "title": "Tres formas de hacer clic",
-          "body": "1. **clic** — selecciona uno solo\n2. **Shift + clic** — suma caracteres a la selección (se pintan en verde)\n3. **Ctrl + clic** — los compara en color, sin editar",
-          "keys": ["clic", "Shift", "+", "clic", "Ctrl", "+", "clic"]
-        },
-        {
-          "target": "#tab-dim",
-          "title": "Moverse sin el mouse",
-          "body": "Las flechas recorren la rejilla. Con **Shift** extendés la selección. **Esc** limpia todo y volvés a empezar.",
-          "keys": ["←", "→", "↑", "↓", "Shift", "+", "flecha", "Esc"],
-          "cursor": true
-        },
-        {
-          "target": "#tab-dim .panel.ctl",
-          "title": "Altura, ancho y proporción",
-          "body": "El candado **🔒** mantiene la proporción: al mover un valor el otro se acomoda solo. Con el candado abierto cambiás ancho y alto por separado. **Proporción original** y **Sin rotación** deshacen los cambios.",
-          "keys": ["🔒 candado"],
-          "demo": "scale",
-          "viewBox": "-300 0 2000 1000",
-          "loop": true
-        },
-        {
-          "target": "#tab-dim",
-          "title": "Avance y trazado",
-          "body": "El **avance** es el ancho que ocupa el carácter. Abajo están los controles de trazado (umbral, desenfoque, suavizado): afectan a los renders venideros. **Re-trazar** vuelve a procesar el último render y **Diagnóstico** guarda la máscara en output/debug.",
-          "keys": ["Enter", "avanza", "Esc", "vuelve"]
-        }
-  ]
+      {
+        "target": "#dimChars",
+        "title": "Elegí un carácter",
+        "body": "Cada botón es un glifo. La rejilla es la puerta de entrada a todo lo demás.",
+        "keys": [
+          "clic"
+        ]
+      },
+      {
+        "target": "#dimChars",
+        "title": "Tres formas de hacer clic",
+        "body": "1. **clic** — selecciona uno solo\n2. **Shift + clic** — suma caracteres a la selección (se pintan en verde)\n3. **Ctrl + clic** — los compara en color, sin editar",
+        "keys": [
+          "clic",
+          "Shift",
+          "+",
+          "clic",
+          "Ctrl",
+          "+",
+          "clic"
+        ]
+      },
+      {
+        "target": "#tab-dim",
+        "title": "Moverse sin el mouse",
+        "body": "Las flechas recorren la rejilla. Con **Shift** extendés la selección. **Esc** limpia todo y volvés a empezar.",
+        "keys": [
+          "←",
+          "→",
+          "↑",
+          "↓",
+          "Shift",
+          "+",
+          "flecha",
+          "Esc"
+        ],
+        "cursor": true
+      },
+      {
+        "target": "#tab-dim .panel.ctl",
+        "title": "Altura, ancho y proporción",
+        "body": "El candado **🔒** mantiene la proporción: al mover un valor el otro se acomoda solo. Con el candado abierto cambiás ancho y alto por separado. **Proporción original** y **Sin rotación** deshacen los cambios.",
+        "keys": [
+          "🔒 candado"
+        ],
+        "demo": "scale",
+        "viewBox": "-300 0 2000 1000",
+        "loop": true
+      },
+      {
+        "target": "#tab-dim",
+        "title": "Avance y trazado",
+        "body": "El **avance** es el ancho que ocupa el carácter. Abajo están los controles de trazado (umbral, desenfoque, suavizado): afectan a los renders venideros. **Re-trazar** vuelve a procesar el último render y **Diagnóstico** guarda la máscara en output/debug.",
+        "keys": [
+          "Enter",
+          "avanza",
+          "Esc",
+          "vuelve"
+        ]
+      }
+    ]
   },
   "kern": {
     "title": "Kerning",
     "steps": [
-        {
-          "target": ".ksubtab",
-          "title": "Dos herramientas distintas",
-          "body": "**Manual por par** corrige un par concreto (AV, To, Yo…) y **Base por lote** aplica la misma regla a muchos caracteres de una vez.",
-          "keys": ["Manual por par", "/", "Base por lote"]
-        },
-        {
-          "target": "#kbL",
-          "title": "Paso 1 y 2: izquierda y derecha",
-          "body": "Se elige el carácter de la izquierda, después el de la derecha. El candado **🔒** fija un lado para repetir el otro muchas veces seguidas.",
-          "keys": ["🔒"],
-          "demo": "pair",
-          "viewBox": "-100 250 1400 700",
-          "loop": true
-        },
-        {
-          "target": "#kvS",
-          "title": "Paso 3: el valor",
-          "body": "El valor final es **base + ajuste manual**. La base sale del render; lo que movés acá se guarda aparte, así podés re-trazar sin perder tus ajustes. **Guardar Excepción** lo fija.",
-          "keys": ["Enter", "avanza", "Esc", "vuelve", "Ctrl+Enter", "toggle"],
-          "demo": "kern",
-          "viewBox": "-100 250 1400 700",
-          "loop": true
-        },
-        {
-          "target": "#ksub-pair .chars.batchgrid",
-          "title": "Teclado del asistente",
-          "body": "Las flechas recorren, **Shift** extiende el rango, **Enter** avanza de paso y **Esc** retrocede. Se puede hacer un kerning entero sin tocar el mouse.",
-          "keys": ["←", "→", "Shift", "Enter", "Esc"],
-          "cursor": true
-        },
-        {
-          "target": "#kbApply",
-          "title": "Base por lote",
-          "body": "Acá definís el espacio que aporta cada carácter por su lado izquierdo (**l**) y derecho (**r**). El servidor combina los dos lados de cada par automáticamente. **⇄** intercambia los placeholders y **Restablecer a 0** limpia el lote.",
-          "keys": ["⇄", "Aplicar a Lote", "Restablecer a 0"]
-        }
-  ]
-  },
-  "imp": {
-    "title": "Inicio",
-    "steps": [
-        {
-          "target": "#impZona",
-          "title": "Empezá por acá",
-          "body": "Elegí el archivo que exportaste de tu programa de diseño. La app lo traza, arma los glifos y reconstruye la fuente sola.",
-          "keys": ["Elegir archivo…"]
-        },
-        {
-          "target": "#impZona",
-          "title": "Qué archivos acepta",
-          "body": "PNG, JPG, SVG o la exportación **JSON** de glifos.\n- El **JSON** trae los vectores exactos: no hay que trazar nada.\n- Las **imágenes** se recortan celda por celda y se trazan.",
-          "keys": ["PNG", "JPG", "SVG", "JSON"]
-        },
-        {
-          "target": "#impAccesos",
-          "title": "Ir a cada sección",
-          "body": "Estos accesos llevan a las demás secciones. También podés usar las **flechas** del teclado, o **Ctrl + ←** y **Ctrl + →** para cambiar de sección desde cualquier lado.",
-          "keys": ["←", "→", "Ctrl", "+", "flecha"]
-        },
-        {
-          "target": "#impCarpetas",
-          "title": "Qué pasó con cada archivo",
-          "body": "Acá ves lo que quedó pendiente, lo que se procesó y lo que falló. Si un render no tiene el tamaño esperado, el motivo queda en **Registro**.",
-          "keys": ["pendientes", "procesados", "errores"]
-        }
-  ]
-  },
-  "words": {
-    "title": "Palabras",
-    "steps": [
-        {
-          "target": "#wordIn",
-          "title": "Probá texto real",
-          "body": "Escribí cualquier palabra o frase para ver cómo se comportan juntos el espaciado y el kerning. Es la forma más rápida de detectar un par que quedó mal.",
-          "keys": ["escribir"],
-          "demo": "word",
-          "viewBox": "-60 300 1500 480",
-          "loop": true
-        }
-  ]
+      {
+        "target": ".ksubtab",
+        "title": "Dos herramientas distintas",
+        "body": "**Manual por par** corrige un par concreto (AV, To, Yo…) y **Base por lote** aplica la misma regla a muchos caracteres de una vez.",
+        "keys": [
+          "Manual por par",
+          "/",
+          "Base por lote"
+        ]
+      },
+      {
+        "target": "#kbL",
+        "title": "Paso 1 y 2: izquierda y derecha",
+        "body": "Se elige el carácter de la izquierda, después el de la derecha. El candado **🔒** fija un lado para repetir el otro muchas veces seguidas.",
+        "keys": [
+          "🔒"
+        ],
+        "demo": "pair",
+        "viewBox": "-100 250 1400 700",
+        "loop": true
+      },
+      {
+        "target": "#kvS",
+        "title": "Paso 3: el valor",
+        "body": "El valor final es **base + ajuste manual**. La base sale del render; lo que movés acá se guarda aparte, así podés re-trazar sin perder tus ajustes. **Guardar Excepción** lo fija.",
+        "keys": [
+          "Enter",
+          "avanza",
+          "Esc",
+          "vuelve",
+          "Ctrl+Enter",
+          "toggle"
+        ],
+        "demo": "kern",
+        "viewBox": "-100 250 1400 700",
+        "loop": true
+      },
+      {
+        "target": "#ksub-pair .chars.batchgrid",
+        "title": "Teclado del asistente",
+        "body": "Las flechas recorren, **Shift** extiende el rango, **Enter** avanza de paso y **Esc** retrocede. Se puede hacer un kerning entero sin tocar el mouse.",
+        "keys": [
+          "←",
+          "→",
+          "Shift",
+          "Enter",
+          "Esc"
+        ],
+        "cursor": true
+      },
+      {
+        "target": "#kbApply",
+        "title": "Base por lote",
+        "body": "Acá definís el espacio que aporta cada carácter por su lado izquierdo (**l**) y derecho (**r**). El servidor combina los dos lados de cada par automáticamente. **⇄** intercambia los placeholders y **Restablecer a 0** limpia el lote.",
+        "keys": [
+          "⇄",
+          "Aplicar a Lote",
+          "Restablecer a 0"
+        ]
+      }
+    ]
   },
   "accent": {
     "title": "Tildes",
     "steps": [
-        {
-          "target": "#tab-accent",
-          "title": "Las tildes se componen solas",
-          "body": "El template no trae vocales acentuadas: el servidor arma **Á É Í Ó Ú á é í ó ú Ñ ñ** unindo cada vocal con su marca.",
-          "keys": ["vocal", "+", "´"]
-        },
-        {
-          "target": "#accS",
-          "title": "Corregir una tilde",
-          "body": "Elegí la letra y movés **X**, **Y** o la **escala**. Empezá por una letra: lo que ajustes se puede aplicar a las demás. **Recomponer** rehace todas.",
-          "keys": ["Recomponer", "Restablecer"],
-          "demo": "accent",
-          "viewBox": "-300 0 2000 1000",
-          "loop": true
-        }
-  ]
+      {
+        "target": "#tab-accent",
+        "title": "Las tildes se componen solas",
+        "body": "El template no trae vocales acentuadas: el servidor arma **Á É Í Ó Ú á é í ó ú Ñ ñ** unindo cada vocal con su marca.",
+        "keys": [
+          "vocal",
+          "+",
+          "´"
+        ]
+      },
+      {
+        "target": "#accS",
+        "title": "Corregir una tilde",
+        "body": "Elegí la letra y movés **X**, **Y** o la **escala**. Empezá por una letra: lo que ajustes se puede aplicar a las demás. **Recomponer** rehace todas.",
+        "keys": [
+          "Recomponer",
+          "Restablecer"
+        ],
+        "demo": "accent",
+        "viewBox": "-300 0 2000 1000",
+        "loop": true
+      }
+    ]
   },
-  "sets": {
-    "title": "Conjuntos de caracteres",
+  "words": {
+    "title": "Palabras",
     "steps": [
-        {
-          "target": "#cs_upper",
-          "title": "Qué entra en la fuente",
-          "body": "Solo se construyen los grupos activos. Destildá **Puntuación** si tu fuente es solo para titulares: la fuente sale más liviana y sin glifos de relleno.",
-          "keys": ["mayúsculas", "minúsculas", "números", "puntuación"],
-          "demo": "sets",
-          "viewBox": "-60 0 1120 360",
-          "loop": true
-        }
-  ]
+      {
+        "target": "#wordIn",
+        "title": "Probá texto real",
+        "body": "Escribí cualquier palabra o frase para ver cómo se comportan juntos el espaciado y el kerning. Es la forma más rápida de detectar un par que quedó mal.",
+        "keys": [
+          "escribir"
+        ],
+        "demo": "word",
+        "viewBox": "-60 300 1500 480",
+        "loop": true
+      }
+    ]
   },
   "font": {
     "title": "Fuente",
     "steps": [
-        {
-          "target": "#family",
-          "title": "Nombre de la familia",
-          "body": "Es el nombre con el que el sistema va a reconocer la fuente. El estilo distingue **Regular**, **Bold**, **Italic**…",
-          "keys": ["Familia", "Estilo"]
-        },
-        {
-          "target": "#build",
-          "title": "Reconstruir",
-          "body": "Genera el **.otf** con los caracteres activos, el kerning y los ajustes. Se guarda en la carpeta **output/**. Si algo falla, el motivo aparece en el Registro.",
-          "keys": ["Reconstruir fuente"],
-          "demo": "build",
-          "viewBox": "-60 0 1120 360",
-          "loop": true
-        }
-  ]
+      {
+        "target": "#cs_upper",
+        "title": "Qué entra en la fuente",
+        "body": "Solo se construyen los grupos activos. Destildá **Puntuación** si tu fuente es solo para titulares: la fuente sale más liviana y sin glifos de relleno.",
+        "keys": [
+          "mayúsculas",
+          "minúsculas",
+          "números",
+          "puntuación"
+        ],
+        "demo": "sets",
+        "viewBox": "-60 0 1120 360",
+        "loop": true
+      },
+      {
+        "target": "#family",
+        "title": "Nombre de la familia",
+        "body": "Es el nombre con el que el sistema va a reconocer la fuente. El estilo distingue **Regular**, **Bold**, **Italic**…",
+        "keys": [
+          "Familia",
+          "Estilo"
+        ]
+      },
+      {
+        "target": "#build",
+        "title": "Reconstruir",
+        "body": "Genera el **.otf** con los caracteres activos, el kerning y los ajustes. Se guarda en la carpeta **output/**. Si algo falla, el motivo aparece en el Registro.",
+        "keys": [
+          "Reconstruir fuente"
+        ],
+        "demo": "build",
+        "viewBox": "-60 0 1120 360",
+        "loop": true
+      }
+    ]
   },
   "log": {
     "title": "Registro",
     "steps": [
-        {
-          "target": "#log",
-          "title": "Qué pasó y qué falló",
-          "body": "Cada importación, cada re-trazado y cada fuente generada quedan acá, con la hora. Si una celda del render está vacía o el render no tiene el tamaño esperado, el motivo se explica en este panel.",
-          "keys": ["últimas 50 líneas"]
-        }
-  ]
+      {
+        "target": "#log",
+        "title": "Qué pasó y qué falló",
+        "body": "Cada importación, cada re-trazado y cada fuente generada quedan acá, con la hora. Si una celda del render está vacía o el render no tiene el tamaño esperado, el motivo se explica en este panel.",
+        "keys": [
+          "últimas 50 líneas"
+        ]
+      }
+    ]
   }
 }

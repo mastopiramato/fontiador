@@ -4,6 +4,20 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
+## [0.2.3] — 2026-10-16
+
+### Cambiado
+
+- **Conjuntos de caracteres** pasó a estar dentro de *Fuente*, que es donde se
+  usa. La pestaña *Conjuntos* ya no existe.
+- **Tildes** se movió arriba de *Palabras* en el menú.
+- La barra lateral ya no repite el estado de las carpetas (vigilando, revisión y
+  pendientes): esa información está en *Inicio*.
+- Los **atajos de teclado** se muestran como fichas iguales a las del menú, y
+  cada sección tiene las suyas (por ejemplo, *Enter* para aplicar en Kerning).
+- Las **rejillas de Kerning** tienen el mismo filtro por categoría que
+  *Dimensiones*: mayúsculas, minúsculas, números, puntuación, especiales, tildes.
+
 ## [0.2.2] — 2026-10-15
 
 ### Corregido

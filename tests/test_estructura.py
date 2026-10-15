@@ -108,6 +108,41 @@ def test_nombres_de_modulos():
               os.path.isfile(os.path.join(RAIZ, mod + ".py")))
 
 
+def test_secciones():
+    """La estructura de secciones tiene que coincidir con el menú."""
+    print("Secciones y menú")
+    page = extraer_page()
+    if not page:
+        return
+    secciones = re.findall(r'<section id="tab-(\w+)"', page)
+    menu = re.findall(r'<button data-tab="(\w+)"', page)
+    check("la misma cantidad de secciones que de botones",
+          len(secciones) == len(menu), "%d vs %d" % (len(secciones), len(menu)))
+    faltan = [t for t in menu if t not in secciones]
+    check("cada botón del menú tiene su sección", not faltan, str(faltan))
+    sobran = [t for t in secciones if t not in menu]
+    check("no hay secciones huérfanas", not sobran, str(sobran))
+
+    # Conjuntos se integró a Fuente: no debe volver como pestaña propia.
+    check("Conjuntos ya no es una pestaña", "sets" not in menu)
+    check("las casillas de conjuntos viven en Fuente",
+          page.find('id="cs_upper"') > page.find('<section id="tab-font"'))
+
+    # Tildes va antes que Palabras.
+    check("Tildes está antes que Palabras",
+          menu.index("accent") < menu.index("words"), str(menu))
+
+    # Cada sección dibuja sus atajos como fichas.
+    for tab in secciones:
+        bloque = re.search(r'<section id="tab-%s".*?(?=<section id=|\Z)' % tab, page, re.S)
+        # Los atajos se generan por JavaScript, así que alcanza con que la sección
+        # exista y esté en la tabla de atajos.
+        check("%s tiene sección" % tab, bloque is not None)
+    for tab in secciones:
+        check("%s figura en la tabla de atajos" % tab,
+              ("%s:" % tab) in page or ("'%s'" % tab) in page)
+
+
 def test_tutorial():
     """Los textos del tutorial viven en tutorial.json y tienen que ser editables."""
     print("Tutoriales")
@@ -126,8 +161,9 @@ def test_tutorial():
         return
     check("tutorial.json es JSON válido", True)
 
-    # Cada sección de la app debería tener su tutorial.
-    secciones = ["imp", "dim", "kern", "words", "accent", "sets", "font", "log"]
+    # Cada sección de la app debería tener su tutorial. Conjuntos ya no es una
+    # sección: su paso quedó dentro del tutorial de Fuente.
+    secciones = ["imp", "dim", "kern", "words", "accent", "font", "log"]
     faltan = [k for k in secciones if k not in datos]
     check("hay un tutorial por sección", not faltan, "faltan %r" % faltan)
 
@@ -322,6 +358,7 @@ if __name__ == "__main__":
     test_page_html()
     test_endpoints()
     test_nombres_de_modulos()
+    test_secciones()
     test_tutorial()
     test_fuente_demo()
     test_importaciones()
