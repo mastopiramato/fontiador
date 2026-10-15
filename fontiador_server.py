@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.1"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1320,11 +1320,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 
   <div class="panel" style="margin-top:1em">
     <b>Trazado del pincel</b>
-    <p class="muted" style="margin:.3em 0">
-      Ajusta cuánto del raster se conserva vs. cuánto se vectoriza. Se aplica al
-      <b>Re-trazar</b> o en la próxima importación de render.
-    </p>
-    <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
+        <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
       <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
       <div class="meter"><i id="m_blur"></i></div></div>
     <div class="slider"><div class="head"><span>Esquinas (alphamax)</span><b id="v_alphamax"></b></div>
@@ -1348,8 +1344,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 
   <div class="panel" style="margin-top:1em">
     <b>Comparar tamaños</b>
-    <p class="muted" style="margin:.3em 0">Se dibuja en gris la base; los demás en color.</p>
-    <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
+        <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
       <button class="btn sec" id="cmpAdd">Añadir actual</button>
       <label>Base <select id="cmpBase"></select></label>
     </div>
@@ -1479,7 +1474,6 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
   <div id="impResultado"></div>
 </div>
 
-<p class="muted" style="margin:.2em 0 .6em">Ir a una sección</p>
 <div class="accesos" id="impAccesos">
   <button class="acceso" data-ir="dim"><b>Dimensiones</b><span>Altura, ancho, posición y trazado de cada glifo</span></button>
   <button class="acceso" data-ir="kern"><b>Kerning</b><span>El espacio entre pares de letras</span></button>
@@ -1499,9 +1493,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
     <a class="btn sec" href="/api/import/plantilla.png" download="fontiador-plantilla.png"
        style="text-decoration:none;display:inline-block;margin-left:.4em">Versión PNG</a>
   </p>
-  <p class="muted">La plantilla ya trae la cuadrícula, la línea base y el orden de los caracteres.
-     Se puede abrir en Affinity, Illustrator, Inkscape, Figma o CorelDRAW y dibujar encima.</p>
-  <details style="margin-top:.6em">
+    <details style="margin-top:.6em">
     <summary style="cursor:pointer">Ver la correspondencia de cada celda</summary>
     <div id="impOrden" style="max-height:320px;overflow:auto;margin-top:.6em"></div>
   </details>
@@ -1531,7 +1523,6 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 
 <section id="tab-accent">
 <h2>Tildes</h2>
-<p class="muted" style="margin-top:0">Las vocales acentuadas usan la tilde ´ de la plantilla; la Ñ/ñ usan la virgulilla ~. Ajusta todas a la vez o por letra (la letra prevalece sobre el general).</p>
 <div class="row" style="align-items:flex-start;gap:1em">
   <div style="width:360px;max-width:100%">
     <div class="panel" style="display:flex;gap:.5em;align-items:center;margin-bottom:.5em">
@@ -1561,7 +1552,6 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 <label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
 <label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
 <p style="margin-top:1em"><button class="btn sec" id="tourReset">↻ Restablecer tutoriales</button></p>
-<p class="muted">Vuelve a mostrar el tutorial de cada sección la próxima vez que la abras.</p>
 </div>
 </section>
 

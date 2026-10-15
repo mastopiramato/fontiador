@@ -33,7 +33,7 @@ Para probarlo sin ensuciar tu instalación:
 
 ```powershell
 $dest = "$env:TEMP\FontiadorTest"
-.\dist\installer\Fontiador-0.2.0-win-x64-setup.exe /VERYSILENT "/DIR=$dest"
+.\dist\installer\Fontiador-0.2.1-win-x64-setup.exe /VERYSILENT "/DIR=$dest"
 ```
 
 **El instalador por usuario no borra los datos del usuario.** Al desinstalar se
@@ -67,7 +67,7 @@ Para activarlo alcanza con cargar los secretos `AZURE_TENANT_ID`,
 
 1. Actualizá `APP_VERSION` en `fontiador_server.py` y la versión en
    `packaging/windows/fontiador.iss`.
-2. `git tag v0.2.0 && git push origin v0.2.0`
+2. `git tag v0.2.1 && git push origin v0.2.1`
 3. El flujo `Release` compila las tres plataformas, calcula `SHA256SUMS` y crea
    un borrador de release con los artefactos adjuntos.
 
