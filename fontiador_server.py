@@ -3797,7 +3797,14 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send(500, json.dumps({"error": str(e)}))
         elif self.path == "/api/tutorial":
-            self._send(200, json.dumps(load_tutorial(), ensure_ascii=False))
+            # Sin caché: al editar tutorial.json alcanza con recargar la página.
+            cuerpo = json.dumps(load_tutorial(), ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(cuerpo)))
+            self.end_headers()
+            self.wfile.write(cuerpo)
         elif self.path == "/api/demo/font":
             rutas = [
                 os.path.join(fontiador_paths.TEMPLATES_DIR, "FontiadorDemo-Regular.otf"),

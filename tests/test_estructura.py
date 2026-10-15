@@ -108,6 +108,59 @@ def test_nombres_de_modulos():
               os.path.isfile(os.path.join(RAIZ, mod + ".py")))
 
 
+def test_tutorial():
+    """Los textos del tutorial viven en tutorial.json y tienen que ser editables."""
+    print("Tutoriales")
+    import json
+    import fontiador_server as s
+
+    ruta = os.path.join(RAIZ, "tutorial.json")
+    check("existe tutorial.json", os.path.isfile(ruta))
+    if not os.path.isfile(ruta):
+        return
+    try:
+        with open(ruta, encoding="utf-8-sig") as f:
+            datos = json.load(f)
+    except json.JSONDecodeError as e:
+        check("tutorial.json es JSON válido", False, str(e))
+        return
+    check("tutorial.json es JSON válido", True)
+
+    # Cada sección de la app debería tener su tutorial.
+    secciones = ["imp", "dim", "kern", "words", "accent", "sets", "font", "log"]
+    faltan = [k for k in secciones if k not in datos]
+    check("hay un tutorial por sección", not faltan, "faltan %r" % faltan)
+
+    for clave, tour in datos.items():
+        check("%s tiene título" % clave, bool(tour.get("title")))
+        pasos = tour.get("steps") or []
+        check("%s tiene pasos" % clave, bool(pasos))
+        for i, paso in enumerate(pasos, 1):
+            check("%s paso %d tiene título" % (clave, i), bool(paso.get("title")))
+            check("%s paso %d tiene texto" % (clave, i), bool(paso.get("body")))
+
+    # La carga del lado del servidor tiene que devolver lo mismo.
+    cargado = s.load_tutorial()
+    check("load_tutorial devuelve los tutoriales", len(cargado) == len(datos),
+          "%d vs %d" % (len(cargado), len(datos)))
+
+    # Y tiene que tolerar un archivo roto sin romper la app.
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="fontiador_tut_")
+    try:
+        malo = os.path.join(tmp, "tutorial.json")
+        with open(malo, "w", encoding="utf-8") as f:
+            f.write("{ esto no es json")
+        original = s.BASE_DIR
+        s.BASE_DIR = tmp
+        check("un tutorial roto no rompe la app", s.load_tutorial() == {})
+        s.BASE_DIR = original
+    finally:
+        s.BASE_DIR = original
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_fuente_demo():
     print("Fuente de demostración")
     import fontiador_server as s
@@ -266,6 +319,7 @@ if __name__ == "__main__":
     test_page_html()
     test_endpoints()
     test_nombres_de_modulos()
+    test_tutorial()
     test_fuente_demo()
     test_importaciones()
     test_orden_caracteres()
