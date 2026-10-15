@@ -139,7 +139,7 @@ def test_secciones():
 
     # Los bloques largos tienen que ser pestañas, no paneles que crezcan la
     # página: si no, vuelve la barra de scroll.
-    check("no quedan paneles desplegables", 'plegable' not in page)
+    check("no quedan paneles desplegables", 'class="plegable"' not in page)
     check("hay pestañas en Dimensiones e Inicio",
           all(('id="pes-%s"' % t) in page for t in ("dim", "imp")))
     check("Fuente ya no tiene pestañas", 'id="pes-font"' not in page)

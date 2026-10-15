@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.6"
+APP_VERSION = "0.2.7"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1428,7 +1428,7 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .bloque{margin-top:1.2em;padding-top:1em;border-top:1px solid var(--line)}
 .bloque:first-child{margin-top:0;padding-top:0;border-top:0}
 .titulo-bloque{margin:0 0 .7em;font-size:.95em;font-weight:600;color:var(--text)}
-.tabla-chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5em 1.2em}
+.tabla-chk{display:grid;grid-template-columns:1fr 1fr;gap:.6em 1.4em;max-width:420px}
 .tabla-chk .chk{margin:0}
 .campo{margin:0 0 .9em}
 .campo>span{display:block;margin-bottom:.35em;font-size:.9em;color:var(--muted)}
@@ -1441,6 +1441,9 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .kernfila .scrollsec{max-height:none}
 .paso{margin:0 0 .2em;font-size:.95em}
 .paso b{color:var(--ok)}
+/* Fila con foco en la tabla de pares guardados. */
+#kerntable tr.foco{background:#2c3427}
+#kerntable tr.foco td{box-shadow:inset 0 0 0 1px var(--ok)}
 /* Barra de progreso (descarga de la actualización). */
 .barra{height:10px;border-radius:6px;background:#111;border:1px solid var(--line);overflow:hidden}
 .barra>i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s ease}
@@ -1448,8 +1451,6 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .slider .head{display:flex;justify-content:space-between;font-size:.9em;color:var(--muted);margin-bottom:.2em}
 .slider .head b{color:var(--text);font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;accent-color:var(--ok)}
-.meter{height:6px;background:#333;border-radius:3px;overflow:hidden;margin-top:.3em}
-.meter i{display:block;height:100%;background:var(--ok);width:0}
 .btn{background:var(--ok);color:#111;border:0;border-radius:6px;padding:.5em .9em;cursor:pointer;font-weight:600}
 .btn.sec{background:#444;color:var(--text)} .btn.on{background:var(--accent)}
 .chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px;margin-bottom:1em}
@@ -1555,14 +1556,6 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 
 <section id="tab-dim">
 <h2>Dimensiones</h2>
-<div class="row" style="align-items:center;margin-bottom:.6em">
-  <input type="text" id="charSearch" placeholder="Buscar carácter…" style="width:220px">
-  <button class="btn sec" id="reloadBtn" title="Recargar glifos desde el servidor">↻ Recargar</button>
-  <button class="btn sec" id="debugBtn" title="Vuelca máscara y trazado de la celda actual a output/debug/">🔍 Diagnóstico</button>
-  <span class="muted">Elegí el glifo a editar en la rejilla</span>
-</div>
-<div id="dimCats" class="row" style="gap:.3em;margin-bottom:.3em"></div>
-<div class="chars" id="dimChars"></div>
 <div class="row" id="dimFila" style="gap:1.2em">
 <svg id="dimSvg" class="preview" viewBox="-300 -200 2000 1400" style="width:520px;height:360px"></svg>
 <div class="panel ctl" id="dimCtl">
@@ -1583,20 +1576,15 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
     <div class="cuerpo">
       <h4>Trazado del pincel</h4>
       <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
-        <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
-        <div class="meter"><i id="m_blur"></i></div></div>
+        <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5"></div>
       <div class="slider"><div class="head"><span>Esquinas (alphamax)</span><b id="v_alphamax"></b></div>
-        <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4">
-        <div class="meter"><i id="m_alphamax"></i></div></div>
+        <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4"></div>
       <div class="slider"><div class="head"><span>Umbral de tinta</span><b id="v_threshold"></b></div>
-        <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5">
-        <div class="meter"><i id="m_threshold"></i></div></div>
+        <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5"></div>
       <div class="slider"><div class="head"><span>Mancha mínima (px)</span><b id="v_turdsize"></b></div>
-        <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20">
-        <div class="meter"><i id="m_turdsize"></i></div></div>
+        <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20"></div>
       <div class="slider"><div class="head"><span>Tolerancia de curva</span><b id="v_opttolerance"></b></div>
-        <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1">
-        <div class="meter"><i id="m_opttolerance"></i></div></div>
+        <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1"></div>
       <div class="row" style="gap:.4em">
         <button class="btn sec" id="traceDefaults">Valores por defecto</button>
         <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
@@ -1605,14 +1593,22 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
     </div>
     <div class="cuerpo">
       <h4>Comparar tamaños</h4>
+      <p class="muted" style="margin:0 0 .6em">Elegí con qué comparar: se dibuja en gris detrás del glifo.</p>
       <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
-        <button class="btn sec" id="cmpAdd">Añadir actual</button>
-        <label>Base <select id="cmpBase"></select></label>
+        <button class="btn sec" id="cmpAdd">Añadir el actual a la comparación</button>
+        <button class="btn sec" id="cmpClear">Quitar la base</button>
       </div>
+      <div id="cmpPicker" class="chars" style="max-height:100px"></div>
       <div id="cmpChips"></div>
     </div>
   </div>
 </div>
+</div>
+
+<div class="bloque">
+  <h4 class="titulo-bloque">Caracteres</h4>
+  <div id="dimCats" class="row" style="gap:.3em;margin-bottom:.5em"></div>
+  <div class="chars" id="dimChars"></div>
 </div>
 </section>
 
@@ -1644,8 +1640,7 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
         <div class="bloque">
           <h4 class="titulo-bloque">Separación</h4>
           <div class="slider" style="margin-bottom:.6em"><div class="head"><span>Separación final</span><b id="kvOut">0</b></div>
-            <input type="range" id="kvS" min="-600" max="600" value="0">
-            <div class="meter"><i id="kvM"></i></div></div>
+            <input type="range" id="kvS" min="-600" max="600" value="0"></div>
           <p class="muted" id="kvInfo" style="font-size:.88em;margin:0 0 .9em"></p>
           <button class="btn" id="kvSave">Guardar excepción</button>
         </div>
@@ -1763,34 +1758,29 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 
 <div class="pestanas" id="pes-imp">
   <input type="radio" name="p-imp" id="p-imp-1" checked><label for="p-imp-1">Registro</label>
-  <input type="radio" name="p-imp" id="p-imp-2"><label for="p-imp-2">Formato</label>
-  <input type="radio" name="p-imp" id="p-imp-3"><label for="p-imp-3">Versión</label>
   <div class="cuerpo">
     <h4>Qué pasó y qué falló</h4>
     <pre id="log" style="margin:0"></pre>
   </div>
-  <div class="cuerpo">
-    <h4>Cómo tiene que ser la rejilla</h4>
-    <div id="impFormatoDet" class="muted">Cargando…</div>
+</div>
+
+<div class="panel" style="margin-top:.8em">
+  <p style="margin:0 0 .5em"><b>Versión <span id="verActual">…</span></b></p>
+  <p class="muted" id="updEstado" style="margin:.2em 0 .8em">Todavía no se comprobó si hay actualizaciones.</p>
+  <p style="margin:0">
+    <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
+    <button class="btn" id="updBajar" style="display:none;margin-left:.4em">Descargar e instalar</button>
+    <button class="btn" id="updInstalar" style="display:none;margin-left:.4em">Instalar y reiniciar</button>
+    <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
+       style="text-decoration:none;display:none;margin-left:.4em">Abrir la página</a>
+  </p>
+  <div id="updProgreso" style="display:none;margin-top:.9em">
+    <div class="barra"><i id="updBarraFill"></i></div>
+    <p class="muted" id="updBarraTxt" style="margin:.4em 0 0;font-size:.88em"></p>
   </div>
-  <div class="cuerpo">
-    <h4>Versión <span id="verActual">…</span></h4>
-    <p class="muted" id="updEstado" style="margin:.2em 0 .9em">Todavía no se comprobó si hay actualizaciones.</p>
-    <p style="margin:0 0 .2em">
-      <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
-      <button class="btn" id="updBajar" style="display:none;margin-left:.4em">Descargar e instalar</button>
-      <button class="btn" id="updInstalar" style="display:none;margin-left:.4em">Instalar y reiniciar</button>
-      <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
-         style="text-decoration:none;display:none;margin-left:.4em">Abrir la página</a>
-    </p>
-    <div id="updProgreso" style="display:none;margin-top:.9em">
-      <div class="barra"><i id="updBarraFill"></i></div>
-      <p class="muted" id="updBarraTxt" style="margin:.4em 0 0;font-size:.88em"></p>
-    </div>
-    <div id="updNotas" style="display:none;margin-top:.9em">
-      <p class="muted" style="margin:0 0 .3em">Qué cambió:</p>
-      <pre id="updNotasTxt" style="max-height:150px"></pre>
-    </div>
+  <div id="updNotas" style="display:none;margin-top:.9em">
+    <p class="muted" style="margin:0 0 .3em">Qué cambió:</p>
+    <pre id="updNotasTxt" style="max-height:150px"></pre>
   </div>
 </div>
 </section>
@@ -1866,6 +1856,10 @@ let KB_ANCHOR = 0;
 // Estado del par manual (dos lotes + paso + candados)
 const KSTATE = {step: 'L', L: new Set(), R: new Set(), lockL: false, lockR: false};
 let DIM_STEP = 'chars';
+// Fila con foco en la tabla de pares guardados (para recorrerla con el teclado).
+let KERNFILA = -1;
+// Pares marcados en esa tabla, por "izquierda|derecha".
+const KERNMARCA = new Set();
 
 async function api(path, body){
   const r = await fetch(path, body === undefined ? {} :
@@ -1926,9 +1920,6 @@ function showSVGMessage(svgId, msg){
   const svg = $(svgId);
   if (svg) svg.innerHTML = '<text x="20" y="60" fill="#f06fc0" font-size="42" font-family="system-ui">' + msg + '</text>';
 }
-function setMeter(id, val, min, max){
-  if ($(id)) $(id).style.width = Math.max(0, Math.min(100, (val-min)/(max-min)*100)) + '%';
-}
 
 function getPairKerning(L, R){
   if (!L || !R) return 0;
@@ -1975,8 +1966,22 @@ function renderCompare(){
     chip.querySelector('a').onclick = e => { e.preventDefault(); CMP.chars.splice(i,1); renderCompare(); drawDim(); };
     box.appendChild(chip);
   });
-  fillSelect('cmpBase', S.chars, true);
-  if ($('cmpBase')) $('cmpBase').value = CMP.base || '';
+  // La base se elige haciendo clic en el carácter: nada de listas desplegables
+  // que haya que desplazar.
+  const pick = $('cmpPicker');
+  if (pick){
+    pick.innerHTML = '';
+    for (const c of [...S.chars]){
+      const b = document.createElement('button');
+      b.textContent = c;
+      if (c === CMP.base) b.classList.add('sel');
+      b.onclick = () => {
+        CMP.base = (CMP.base === c) ? null : c;
+        renderCompare(); drawDim();
+      };
+      pick.appendChild(b);
+    }
+  }
 }
 function addToCompare(c){
   if (!c) return;
@@ -2038,7 +2043,7 @@ function buildSliders(){
     const wrap = document.createElement('div'); wrap.className = 'slider'; wrap.id = 'sl_' + s.key;
     wrap.innerHTML = '<div class="head"><span>'+s.label+'</span><b id="v_'+s.key+'"></b></div>' +
       '<input type="range" id="r_'+s.key+'" min="'+s.min+'" max="'+s.max+'" step="'+s.step+'">' +
-      '<div class="meter"><i id="m_'+s.key+'"></i></div>';
+      '';
     box.appendChild(wrap);
     $('r_'+s.key).addEventListener('input', e => onSlider(s.key, parseFloat(e.target.value)));
     $('r_'+s.key).addEventListener('change', () => saveAdj());
@@ -2065,7 +2070,6 @@ function refreshSliderUI(){
     const v = vals[s.key];
     if ($('r_'+s.key)) $('r_'+s.key).value = v;
     if ($('v_'+s.key)) $('v_'+s.key).textContent = Math.round(v) + (s.unit || '');
-    setMeter('m_'+s.key, v, s.min, s.max);
   }
   if ($('lockChk')) $('lockChk').checked = S.lock;
 }
@@ -2140,7 +2144,6 @@ function fillTraceUI(){
     const b = $('v_' + k);
     if (b) b.textContent = (k === 'turdsize') ? Math.round(v) : (+v).toFixed(2);
     const min = parseFloat(el.min), max = parseFloat(el.max);
-    setMeter('m_' + k, v, min, max);
   }
 }
 async function pushTrace(){
@@ -2161,7 +2164,6 @@ function bindTraceSliders(){
       const b = $('v_' + k);
       if (b) b.textContent = (k === 'turdsize') ? Math.round(v) : v.toFixed(2);
       const min = parseFloat(el.min), max = parseFloat(el.max);
-      setMeter('m_' + k, v, min, max);
     };
     el.onchange = pushTrace;
   }
@@ -2169,7 +2171,7 @@ function bindTraceSliders(){
 
 // ---------- Caracteres ----------
 function renderCharGrid(){
-  const q = ($('charSearch') ? $('charSearch').value : '').trim();
+    const q = '';
   const box = $('dimChars');
   if (!box) return;
   box.innerHTML = '';
@@ -2400,6 +2402,8 @@ async function drawBasePrev(){
 function switchKsub(name){
   document.querySelectorAll('.ksubtab').forEach(b => b.classList.toggle('active', b.dataset.ksub === name));
   document.querySelectorAll('#tab-kern .ksub').forEach(s => s.classList.toggle('active', s.id === 'ksub-' + name));
+  // Al cambiar de solapa se suelta el foco de la tabla de pares.
+  if (name !== 'pares') KERNFILA = -1;
   ensureKerningData();
 }
 
@@ -2424,7 +2428,6 @@ async function loadPairUI(L, R){
   const finalVal = baseTotal + manualOffset;
   if ($('kvS')) $('kvS').value = finalVal;
   if ($('kvOut')) $('kvOut').textContent = finalVal;
-  setMeter('kvM', finalVal, -600, 600);
   if ($('kvInfo')) $('kvInfo').innerHTML = 'Par: <b>' + L + R + '</b> · Base: <b>' + baseTotal + '</b> · Manual: <b>' + manualOffset + '</b>';
   updateKmStepLabel();
   syncSelectionVisuals();
@@ -2691,6 +2694,26 @@ function chipsTeclas(lista){
   return caja;
 }
 
+/* Los atajos de cada solapa de Kerning, arriba de todo. */
+const ATAJOS_KERN = {
+  pair:  [['←','→','recorrer'], ['Shift','+','flecha','extender'], ['Enter','avanzar de paso'],
+          ['Esc','volver'], ['🔒','fijar un lado']],
+  base:  [['←','→','recorrer'], ['Shift','+','flecha','extender'], ['Ctrl','+','Enter','sumar o quitar'],
+          ['🔒','fijar un lado']],
+  pares: [['↑','↓','recorrer'], ['Shift','+','↑','↓','extender'], ['Ctrl','+','Enter','marcar'],
+          ['Supr','borrar']],
+};
+
+function pintarAtajosKern(){
+  for (const [sub, lista] of Object.entries(ATAJOS_KERN)){
+    const caja = $('ksub-' + sub);
+    if (!caja) continue;
+    const previo = caja.querySelector(':scope > .atajos');
+    if (previo) previo.remove();
+    caja.insertBefore(chipsTeclas(lista), caja.firstElementChild);
+  }
+}
+
 function pintarAtajos(){
   for (const [tab, lista] of Object.entries(ATAJOS)){
     const sec = $('tab-' + tab);
@@ -2701,6 +2724,7 @@ function pintarAtajos(){
     if (!h2) continue;
     h2.insertAdjacentElement('afterend', chipsTeclas(lista));
   }
+  if (typeof pintarAtajosKern === 'function') pintarAtajosKern();
 }
 
 /* Deja el cuerpo de cada pestaña con la altura que sobra hasta el pie de la
@@ -2875,6 +2899,13 @@ function renderKerningTable(){
     };
     tb.appendChild(tr);
   }
+  // La tabla se vuelve a dibujar cada segundo, así que hay que reponer lo que el
+  // usuario había marcado y la fila con foco; si no, se pierden solos.
+  for (const c of tb.querySelectorAll('input.kernrow')){
+    c.checked = KERNMARCA.has(c.dataset.l + '|' + c.dataset.r);
+  }
+  const filas = tb.querySelectorAll('tr');
+  filas.forEach((f, k) => f.classList.toggle('foco', k === KERNFILA));
 }
 
 // ---------- Estado ----------
@@ -2960,7 +2991,6 @@ function kernSetValue(v){
   v = Math.max(-600, Math.min(600, Math.round(v)));
   if ($('kvS')) $('kvS').value = v;
   if ($('kvOut')) $('kvOut').textContent = v;
-  setMeter('kvM', v, -600, 600);
   drawPair();
 }
 async function kernSave(){
@@ -3021,6 +3051,48 @@ document.addEventListener('keydown', e => {
 
   if (activeSub.dataset.ksub === 'base'){
     if (e.key === 'Escape'){ e.preventDefault(); KB_SEL.clear(); syncSelectionVisuals(); }
+    return;
+  }
+
+  /* Solapa de pares guardados: ↑ ↓ recorren, Shift extiende, Ctrl+Enter marca
+     y Supr borra lo marcado. El foco se guarda por número de fila, no por el
+     elemento: la tabla se vuelve a dibujar y las filas cambian. */
+  if (activeSub.dataset.ksub === 'pares'){
+    const filas = [...document.querySelectorAll('#kerntable tr')];
+    if (!filas.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      const paso = e.key === 'ArrowDown' ? 1 : -1;
+      let i = KERNFILA;
+      i = (i < 0 || i >= filas.length)
+        ? (paso > 0 ? 0 : filas.length - 1)
+        : Math.max(0, Math.min(filas.length - 1, i + paso));
+      if (e.shiftKey && KERNFILA >= 0 && KERNFILA < filas.length){
+        // Con Shift se marca el tramo recorrido.
+        const [a, b] = KERNFILA < i ? [KERNFILA, i] : [i, KERNFILA];
+        for (let k = a; k <= b; k++){
+          const chk = filas[k].querySelector('input.kernrow');
+          if (chk){ chk.checked = true; kernMarcar(chk, true); }
+        }
+      }
+      KERNFILA = i;
+      filas.forEach((f, k) => f.classList.toggle('foco', k === i));
+      filas[i].scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      const fila = filas[KERNFILA];
+      const chk = fila && fila.querySelector('input.kernrow');
+      if (chk){ chk.checked = !chk.checked; kernMarcar(chk, chk.checked); }
+      return;
+    }
+    if (e.key === 'Delete'){
+      e.preventDefault();
+      const marcados = [...document.querySelectorAll('input.kernrow')].filter(c => c.checked);
+      if (marcados.length && $('kernDelSel')) $('kernDelSel').click();
+      return;
+    }
     return;
   }
 
@@ -3259,20 +3331,32 @@ if ($('kbDelete')) $('kbDelete').onclick = async () => {
   await loadStatus();
 };
 
-if ($('kernChkAll')) $('kernChkAll').onchange = (e) => {
-  document.querySelectorAll('.kernrow').forEach(c => c.checked = e.target.checked);
-};
-if ($('kernSelAll')) $('kernSelAll').onclick = () => {
-  document.querySelectorAll('.kernrow').forEach(c => c.checked = true);
-};
-if ($('kernSelNone')) $('kernSelNone').onclick = () => {
-  document.querySelectorAll('.kernrow').forEach(c => c.checked = false);
-};
+/* Las marcas se guardan en un conjunto aparte porque la tabla se redibuja cada
+   segundo y los checkbox se recrean: sin esto, lo marcado se perdería solo. */
+function kernMarcar(casilla, valor){
+  const clave = casilla.dataset.l + '|' + casilla.dataset.r;
+  if (valor) KERNMARCA.add(clave); else KERNMARCA.delete(clave);
+}
+function kernMarcarTodas(valor){
+  for (const c of document.querySelectorAll('.kernrow')){
+    c.checked = valor;
+    kernMarcar(c, valor);
+  }
+}
+document.addEventListener('change', e => {
+  if (e.target && e.target.classList && e.target.classList.contains('kernrow')){
+    kernMarcar(e.target, e.target.checked);
+  }
+});
+if ($('kernChkAll')) $('kernChkAll').onchange = (e) => kernMarcarTodas(e.target.checked);
+if ($('kernSelAll')) $('kernSelAll').onclick = () => kernMarcarTodas(true);
+if ($('kernSelNone')) $('kernSelNone').onclick = () => kernMarcarTodas(false);
 if ($('kernDelSel')) $('kernDelSel').onclick = async () => {
   const rows = [...document.querySelectorAll('.kernrow')].filter(c => c.checked);
   if (!rows.length) return;
   for (const r of rows){
     await api('/api/kerning/delete', {left: r.dataset.l, right: r.dataset.r});
+    KERNMARCA.delete(r.dataset.l + '|' + r.dataset.r);
   }
   await loadStatus();
 };
@@ -3286,23 +3370,7 @@ document.querySelectorAll('nav button[data-tab]').forEach(btn => btn.onclick = (
   if (btn.dataset.tab === 'imp'){ impRefresh(); }
 });
 
-if ($('reloadBtn')) $('reloadBtn').onclick = async () => {
-  clearGlyphCache();
-  S.version = -1;
-  await loadStatus();
-};
 
-if ($('debugBtn')) $('debugBtn').onclick = async () => {
-  if (!S.char){ alert('Seleccioná un carácter primero'); return; }
-  const r = await api('/api/debug_cell?c=' + encodeURIComponent(S.char));
-  if (r && r.error){ alert('Error: ' + r.error); return; }
-  console.log('Diagnóstico', r);
-  alert('Carácter ' + r.char + ' (fila ' + r.row + ', col ' + r.col + ')\n' +
-        'max ' + r.cov_max + ' · mean ' + r.cov_mean + ' · ink ' + r.ink_pixels + ' px\n' +
-        'geom empty: ' + r.geom_empty + '\n' +
-        'settings: ' + JSON.stringify(r.settings) + '\n\n' +
-        'Archivos en output/debug/:\n  ' + r.files.cell + '\n  ' + r.files.mask + '\n  ' + r.files.trace_svg);
-};
 
 bindTraceSliders();
 if ($('traceDefaults')) $('traceDefaults').onclick = async () => {
@@ -3319,12 +3387,11 @@ buildSliders();
 if ($('lockChk')) $('lockChk').onchange = e => setLock(e.target.checked);
 if ($('resetRatio')) $('resetRatio').onclick = resetRatio;
 if ($('resetRot')) $('resetRot').onclick = resetRot;
-if ($('charSearch')) $('charSearch').oninput = renderCharGrid;
 if ($('cmpAdd')) $('cmpAdd').onclick = () => addToCompare(S.char);
-if ($('cmpBase')) $('cmpBase').onchange = () => { CMP.base = $('cmpBase').value || null; drawDim(); };
+if ($('cmpClear')) $('cmpClear').onclick = () => { CMP.base = null; renderCompare(); drawDim(); };
 if ($('kvS')) {
   $('kvS').onchange = savePair;
-  $('kvS').oninput = () => { S.busyUntil = Date.now() + 1500; $('kvOut').textContent = $('kvS').value; setMeter('kvM', $('kvS').value, -600, 600); drawPair(); };
+  $('kvS').oninput = () => { S.busyUntil = Date.now() + 1500; $('kvOut').textContent = $('kvS').value; drawPair(); };
 }
 if ($('kvSave')) $('kvSave').onclick = () => kernSave();
 
@@ -3427,22 +3494,6 @@ async function impElegir(){
   }
 }
 
-function impFormatoHTML(f, modo, base){
-  if (!f) return '';
-  const filas = f.filas;
-  return '<table style="font-size:.92em"><tbody>' +
-    '<tr><td>Cuadrícula</td><td><b>' + f.columnas + ' columnas × ' + filas + ' filas</b> ' +
-      '(' + f.caracteres + ' caracteres)</td></tr>' +
-    '<tr><td>Tamaño de celda</td><td><b>' + f.celda + ' × ' + f.celda + ' px</b></td></tr>' +
-    '<tr><td>Ancho total del render</td><td><b>' + (f.columnas * f.celda) + ' px</b> ' +
-      '<span class="muted">(en PNG, 600 ppp)</span></td></tr>' +
-    '<tr><td>Línea base</td><td><b>' + f.linea_base + ' px</b> desde el borde superior de cada celda</td></tr>' +
-    '<tr><td>Avance por defecto</td><td>' + f.avance_defecto + ' unidades (UPM ' + f.upm + ')</td></tr>' +
-    '</tbody></table>' +
-    '<p class="muted" style="margin:.5em 0 0">Dónde guarda los datos esta instalación: <b>' +
-      (base || '') + '</b> (' + (modo === 'usuario' ? 'carpeta de datos del usuario' : 'carpeta de la app') + ').</p>';
-}
-
 /* Resumen corto para el cartel de la plantilla: una línea, sin tabla. */
 function impFormatoResumen(f){
   if (!f) return '';
@@ -3456,8 +3507,7 @@ async function impRefresh(){
     if (!r || r.error) return;
     if ($('impModo')) $('impModo').textContent = '(' + r.datos + ')';
     if ($('impFormato')) $('impFormato').textContent = impFormatoResumen(r.formato);
-    if ($('impFormatoDet')) $('impFormatoDet').innerHTML = impFormatoHTML(r.formato, r.modo, r.base_dir);
-    if ($('impPickHint')){
+        if ($('impPickHint')){
       $('impPickHint').textContent = r.dialogo
         ? 'Se abre el diálogo de archivos de ' + r.plataforma + '. Podés elegir varios a la vez.'
         : 'Este sistema no tiene diálogo de archivos disponible: copiá el archivo dentro de la carpeta inbox y usá "Re-escanear inbox".';
@@ -3718,18 +3768,7 @@ async function cargarTutorial(){
   return TOURS;
 }
 
-const TOUR_STORE = 'fontiador_tours_v1';
 
-function toursSeen(){
-  try { return JSON.parse(localStorage.getItem(TOUR_STORE) || '{}') || {}; }
-  catch (e) { return {}; }
-}
-function tourSeen(id){ return toursSeen()[id] === true; }
-function markTourSeen(id){
-  const s = toursSeen();
-  s[id] = true;
-  try { localStorage.setItem(TOUR_STORE, JSON.stringify(s)); } catch (e) {}
-}
 
 /* ---------- Utilerías de dibujo (mismo espacio de coordenadas que la app) ---------- */
 /* Copia literal de glyphPaths() de la app, para que las animaciones usen exactamente
@@ -4019,8 +4058,7 @@ function tourOpen(id, auto){
   TOUR.id = id; TOUR.step = 0; TOUR.active = true;
   /* Solo la reproducción automática marca el tutorial como visto: el botón "?" 
      puede repetirse tantas veces como haga falta sin alterar el estado. */
-  if (auto) markTourSeen(id);
-  const root = tourRoot();
+    const root = tourRoot();
   root.classList.add('on');
   if (!TOUR.card){
     const card = document.createElement('div');
@@ -4089,17 +4127,8 @@ window.addEventListener('keydown', e => {
   if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); tourGo(1); return; }
 }, true);
 
-function tourMaybeAuto(id){
-  if (!TOURS[id] || tourSeen(id)) return;
-  /* ?nofirst=1 desactiva el arranque automático (útil para pruebas y capturas). */
-  try {
-    if (new URLSearchParams(location.search).get('nofirst') === '1') return;
-  } catch (e) {}
-  setTimeout(() => {
-    if (TOUR.active || tourSeen(id)) return;   // no pisar una repetición pedida a mano
-    tourOpen(id, true);
-  }, 450);
-}
+/* Los tutoriales sólo se abren cuando se piden: con el botón "Ver el tutorial",
+   con la tecla "?" o desde el botón de ayuda. No saltan solos al entrar. */
 
 function tourReplay(){
   if (TOUR.active) return;
@@ -4115,21 +4144,7 @@ function tourMountButtons(){
   document.querySelector('main').appendChild(bar);
 }
 
-function tourReset(){
-  try { localStorage.removeItem(TOUR_STORE); } catch (e) {}
-  alert('Tutoriales restablecidos: volverán a mostrarse al abrir cada sección.');
-}
-
-/* Enganches: la primera visita a cada sección lanza su tutorial */
-document.querySelectorAll('nav button[data-tab]').forEach(btn => {
-  const prev = btn.onclick;
-  btn.onclick = ev => {
-    if (prev) prev(ev);
-    tourMaybeAuto(btn.dataset.tab);
-  };
-});
 tourMountButtons();
-if ($('tourReset')) $('tourReset').onclick = tourReset;
 
 /* El aviso automático de la sección abierta se lanza más abajo, después de
    cargar los textos del tutorial: antes de eso no hay nada que mostrar. */
@@ -4258,14 +4273,9 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
     }
   }
 
-  /* Se dejan los textos del tutorial cargados desde el arranque: si no, la tecla
-     "?" y el aviso automático no encuentran nada con qué armar el tutorial. */
-  if (typeof cargarTutorial === 'function'){
-    cargarTutorial().then(() => { if (typeof tourMaybeAuto === 'function'){
-      const a = document.querySelector('nav button[data-tab].active');
-      if (a) tourMaybeAuto(a.dataset.tab);
-    }});
-  }
+  /* Los textos del tutorial se dejan cargados para cuando se pidan con "?" o
+     con el botón "Ver el tutorial". No se abre ninguno solo. */
+  if (typeof cargarTutorial === 'function') cargarTutorial();
 })();
 </script></body></html>
 """

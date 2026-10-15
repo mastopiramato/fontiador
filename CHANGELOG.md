@@ -4,7 +4,30 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿﻿## [0.2.6] — 2026-10-16
+﻿﻿﻿﻿## [0.2.7] — 2026-10-16
+
+### Cambiado
+
+- **Los tutoriales ya no se abren solos.** Sólo aparecen cuando se piden: con el
+  botón *Ver el tutorial*, con la tecla `?` o con el botón de ayuda de la
+  esquina. Se fue también el *Restablecer tutoriales* y el registro de "ya visto".
+- **Inicio**: se quitó la pestaña *Formato*. *Registro* queda como única pestaña
+  y la versión pasa a ser un panel de texto al final, con *Buscar actualizaciones*.
+- **Dimensiones**:
+  - Se quitaron las barras grises que iban debajo de cada deslizador.
+  - Con *Escala bloqueada* activa sólo se ve **Escala**; apagada, sólo **Ancho** y
+    **Alto**. Antes se veían las tres a la vez.
+  - *Comparar tamaños* usa una grilla de caracteres para elegir la base, en vez de
+    una lista desplegable que había que desplazar.
+  - Se fueron los botones *Diagnóstico* y *Recargar*, y el buscador de caracteres:
+    ahora se elige el glifo haciendo clic en la grilla.
+  - La grilla de caracteres y sus filtros pasaron abajo, como en Kerning.
+- **Kerning**: las tres solapas muestran sus atajos arriba. En *Pares guardados*
+  se recorre con ↑ ↓, se extiende con Shift, se marca con Ctrl+Enter y se borra
+  con Supr.
+- **Fuente**: los cuatro conjuntos se muestran en 2 × 2.
+
+## [0.2.6] — 2026-10-16
 
 ### Añadido
 
