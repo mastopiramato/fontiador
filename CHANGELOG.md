@@ -4,7 +4,36 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿﻿﻿﻿﻿## [0.2.9] — 2026-10-16
+﻿﻿﻿﻿﻿﻿﻿## [0.3.0] — 2026-10-16
+
+### Cambiado
+
+Dimensiones, los cuatro puntos pedidos:
+
+- **Pestañas desanidadas**: cada una contiene sólo su contenido. Se fueron los
+  títulos internos ("Ajustes del glifo", "Trazado del pincel", "Comparar
+  tamaños") y las cajas con borde propio que había adentro. Ahora el único
+  recuadro es el de la pestaña.
+- **Candado**: con la escala bloqueada sólo se ve *Escala*; liberada, sólo
+  *Ancho* y *Alto*, que se mueven por separado.
+- **Trazado del pincel** en grilla de dos columnas: los cuatro primeros campos de
+  a dos, y *Tolerancia de curva* con el ancho completo.
+- **Flecha abajo entra a las propiedades** de la pestaña abierta y recorre sus
+  campos; las flechas horizontales ajustan el deslizador que tenga el foco.
+
+### Corregido
+
+- Con el foco en un deslizador, las flechas horizontales no llegaban a ajustarlo:
+  el valor cambiaba en pantalla pero no se guardaba, y volvía atrás. Ahora el
+  deslizador se queda con sus flechas y el cambio se guarda.
+- El ajuste se pisaba solo: el estado se consulta cada segundo y bastaba un
+  segundo y medio para que el valor viejo reemplazara al nuevo. La ventana de
+  gracia pasó a 4 segundos.
+- El alto de las pestañas se calculaba con medidas tomadas mientras la sección
+  estaba oculta (el navegador devuelve 0), y quedaba un tope equivocado. Ahora
+  sólo se mide la pestaña visible y se recalcula en varias pasadas al arrancar.
+
+## [0.2.9] — 2026-10-16
 
 ### Añadido
 

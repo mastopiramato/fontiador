@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.9"
+APP_VERSION = "0.3.0"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1384,7 +1384,7 @@ nav button.active,nav button:hover{background:#333}
 #navAyuda{margin-top:auto;font-size:.76em;color:var(--muted);line-height:1.5}
 #navAyuda b{color:#bbb;font-weight:600}
 kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;border-radius:4px;padding:0 .3em;font-family:ui-monospace,Consolas,monospace;font-size:.92em;color:#ddd}
-main{flex:1;overflow:auto;padding:1.2em 1.6em}
+main{flex:1;overflow:auto;padding:1em 1.6em}
 section{display:none} section.active{display:block}
 h2{font-size:1.1em;margin:.2em 0 .8em}
 .row{display:flex;gap:1.4em;align-items:flex-start;flex-wrap:wrap}
@@ -1422,14 +1422,40 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .pestanas>.cuerpo .panel,.pestanas>.cuerpo .bloque{
   background:none;border:0;border-radius:0;padding:0;margin:1.1em 0 0}
 .pestanas>.cuerpo .bloque:first-child,.pestanas>.cuerpo .panel:first-child{margin-top:0}
+/* Los campos de una pestaña, en dos columnas; lo que necesita todo el ancho
+   lleva .ancho-total. */
+.grilla-campos{display:grid;grid-template-columns:1fr 1fr;gap:1em 1.4em;align-items:start}
+.grilla-campos .ancho-total{grid-column:1 / -1}
+/* El contenedor de deslizadores se lleva todo el ancho y arma su propia grilla,
+   así los campos quedan de a dos por fila. */
+#sliders{display:grid;grid-template-columns:1fr 1fr;gap:1em 1.4em;align-items:start}
+.grilla-campos .campo{margin:0;position:relative}
+.grilla-campos .campo>span{display:block;margin-bottom:.35em;font-size:.9em;color:var(--muted)}
+.grilla-campos .campo input[type=range]{width:100%}
+.grilla-campos .valor{position:absolute;top:0;right:0;color:var(--text)}
+/* Cuál campo tiene el foco cuando se recorren con las flechas. */
+.grilla-campos .campo-foco,.pestanas>.cuerpo .campo-foco{
+  outline:2px solid var(--ok);outline-offset:3px;border-radius:6px}
+/* En Ajustes, la primera columna lleva el candado y los botones; la segunda, los
+   deslizadores. Las dos necesitan ancho, así que se reparten. */
+#pes-dim> .cuerpo:first-of-type .grilla-campos{grid-template-columns:minmax(265px,0.9fr) 1.1fr}
+@media (max-width:900px){
+  #pes-dim> .cuerpo:first-of-type .grilla-campos{grid-template-columns:1fr}
+}
+@media (max-width:760px){ .grilla-campos{grid-template-columns:1fr} }
 .ctl{width:340px;max-width:100%}
 /* La caja de controles de Dimensiones ocupa lo que sobre de ancho: los
    deslizadores necesitan lugar, no una columna angosta. */
 .ctl.ancha,#dimCtl{flex:1 1 520px;width:auto;min-width:360px;max-width:100%}
+/* La fila de Dimensiones no se envuelve: el previsualizador a la izquierda y la
+   caja de controles a la derecha. Sin esto, el SVG con viewBox escala su ancho y
+   termina empujando la caja a una fila aparte. */
+#dimFila{flex-wrap:nowrap}
+#dimFila>#dimSvg{flex:0 0 auto}
+#dimFila>#dimCtl{flex:1 1 auto;min-width:0}
 /* En la caja ancha de Dimensiones los deslizadores van en dos columnas: entran
    todos sin que la caja tenga que crecer ni desplazarse. */
-#dimCtl #sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 1.1em}
-#dimCtl #sliders .slider{margin-bottom:.7em}
+#dimCtl #sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7em 1.1em}
 /* Envoltorio que se desplaza por dentro cuando la ventana es baja, para que la
    sección de Kerning tampoco necesite la barra de scroll de la página. */
 .scrollsec{max-height:calc(100vh - 90px);overflow:auto}
@@ -1578,42 +1604,53 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
     <input type="radio" name="p-dim" id="p-dim-2"><label for="p-dim-2">Trazado del pincel</label>
     <input type="radio" name="p-dim" id="p-dim-3"><label for="p-dim-3">Comparar tamaños</label>
     <div class="cuerpo">
-      <h4>Ajustes del glifo</h4>
-      <label class="chk"><input type="checkbox" id="lockChk" checked> Escala bloqueada a proporción</label>
-      <div class="row" style="gap:.5em;margin:.4em 0 .8em">
-        <button class="btn sec" id="resetRatio">Proporción original</button>
-        <button class="btn sec" id="resetRot">Sin rotación</button>
+      <div class="grilla-campos">
+        <div class="campo">
+          <label class="chk"><input type="checkbox" id="lockChk" checked> Escala bloqueada</label>
+          <p class="muted" style="margin:.35em 0 .6em;font-size:.85em">Mantiene la proporción entre ancho y alto.</p>
+          <div class="row" style="gap:.5em">
+            <button class="btn sec" id="resetRatio">Proporción original</button>
+            <button class="btn sec" id="resetRot">Sin rotación</button>
+          </div>
+        </div>
+        <div id="sliders"></div>
+        <p class="muted ancho-total" id="dimInfo" style="margin:0"></p>
       </div>
-      <div id="sliders"></div>
-      <p class="muted" id="dimInfo" style="margin-bottom:0"></p>
     </div>
     <div class="cuerpo">
-      <h4>Trazado del pincel</h4>
-      <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
-        <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5"></div>
-      <div class="slider"><div class="head"><span>Esquinas (alphamax)</span><b id="v_alphamax"></b></div>
-        <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4"></div>
-      <div class="slider"><div class="head"><span>Umbral de tinta</span><b id="v_threshold"></b></div>
-        <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5"></div>
-      <div class="slider"><div class="head"><span>Mancha mínima (px)</span><b id="v_turdsize"></b></div>
-        <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20"></div>
-      <div class="slider"><div class="head"><span>Tolerancia de curva</span><b id="v_opttolerance"></b></div>
-        <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1"></div>
-      <div class="row" style="gap:.4em">
-        <button class="btn sec" id="traceDefaults">Valores por defecto</button>
-        <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
+      <div class="grilla-campos">
+        <div class="campo"><span>Suavizado (blur)</span>
+          <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
+          <b id="v_blur" class="valor"></b></div>
+        <div class="campo"><span>Esquinas (alphamax)</span>
+          <input type="range" id="r_alphamax" min="0" max="1.33" step="0.01" value="0.4">
+          <b id="v_alphamax" class="valor"></b></div>
+        <div class="campo"><span>Umbral de tinta</span>
+          <input type="range" id="r_threshold" min="0.05" max="0.95" step="0.01" value="0.5">
+          <b id="v_threshold" class="valor"></b></div>
+        <div class="campo"><span>Mancha mínima (px)</span>
+          <input type="range" id="r_turdsize" min="0" max="200" step="1" value="20">
+          <b id="v_turdsize" class="valor"></b></div>
+        <div class="campo ancho-total"><span>Tolerancia de curva</span>
+          <input type="range" id="r_opttolerance" min="0.01" max="1" step="0.01" value="0.1">
+          <b id="v_opttolerance" class="valor"></b></div>
+        <div class="row ancho-total" style="gap:.4em">
+          <button class="btn sec" id="traceDefaults">Valores por defecto</button>
+          <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
+        </div>
+        <p class="muted ancho-total" id="traceInfo" style="font-size:.85em;margin:0"></p>
       </div>
-      <p class="muted" id="traceInfo" style="font-size:.85em;margin-bottom:0"></p>
     </div>
     <div class="cuerpo">
-      <h4>Comparar tamaños</h4>
-      <p class="muted" style="margin:0 0 .6em">Elegí con qué comparar: se dibuja en gris detrás del glifo.</p>
-      <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
-        <button class="btn sec" id="cmpAdd">Añadir el actual a la comparación</button>
-        <button class="btn sec" id="cmpClear">Quitar la base</button>
+      <div class="grilla-campos">
+        <p class="muted ancho-total" style="margin:0">Elegí con qué comparar: se dibuja en gris detrás del glifo.</p>
+        <div class="row ancho-total" style="gap:.4em;align-items:center">
+          <button class="btn sec" id="cmpAdd">Añadir el actual a la comparación</button>
+          <button class="btn sec" id="cmpClear">Quitar la base</button>
+        </div>
+        <div id="cmpPicker" class="chars ancho-total" style="max-height:100px"></div>
+        <div id="cmpChips" class="ancho-total"></div>
       </div>
-      <div id="cmpPicker" class="chars" style="max-height:100px"></div>
-      <div id="cmpChips"></div>
     </div>
   </div>
 </div>
@@ -2056,10 +2093,13 @@ function buildSliders(){
   if (!box) return;
   box.innerHTML = '';
   for (const s of DIM_SLIDERS){
-    const wrap = document.createElement('div'); wrap.className = 'slider'; wrap.id = 'sl_' + s.key;
-    wrap.innerHTML = '<div class="head"><span>'+s.label+'</span><b id="v_'+s.key+'"></b></div>' +
-      '<input type="range" id="r_'+s.key+'" min="'+s.min+'" max="'+s.max+'" step="'+s.step+'">' +
-      '';
+    // Mismo marcado que los campos de Trazado: así los dos caen en la misma
+    // grilla de dos columnas.
+    const wrap = document.createElement('div');
+    wrap.className = 'campo';
+    wrap.id = 'sl_' + s.key;
+    wrap.innerHTML = '<span>'+s.label+'<b id="v_'+s.key+'" class="valor"></b></span>' +
+      '<input type="range" id="r_'+s.key+'" min="'+s.min+'" max="'+s.max+'" step="'+s.step+'">';
     box.appendChild(wrap);
     $('r_'+s.key).addEventListener('input', e => onSlider(s.key, parseFloat(e.target.value)));
     $('r_'+s.key).addEventListener('change', () => saveAdj());
@@ -2090,7 +2130,7 @@ function refreshSliderUI(){
   if ($('lockChk')) $('lockChk').checked = S.lock;
 }
 function onSlider(key, val){
-  S.busyUntil = Date.now() + 1500;
+  S.busyUntil = Date.now() + 4000;
   const c = S.char;
   const g = S.cache[c] || {bbox:{w:1,h:1}};
   const a = S.adj[c] = Object.assign({}, S.adj[c] || {});
@@ -2232,10 +2272,63 @@ function dimMove(dir, extend){
   if (extend){ KB_SEL.add(oldChar); KB_SEL.add(newChar); }
   selectChar(newChar);
 }
+/* Campos de la pestaña abierta en Dimensiones, en el orden en que se ven. */
+function dimCampos(){
+  const abierto = [...document.querySelectorAll('#pes-dim > .cuerpo')]
+    .find(c => getComputedStyle(c).display !== 'none');
+  if (!abierto) return [];
+  return [...abierto.querySelectorAll('input[type=range], input[type=number], input[type=checkbox], button')]
+    .filter(x => x.offsetParent !== null && !x.disabled);
+}
+
+/* Mueve el foco por los campos de la pestaña. Con 'entrar' se arranca desde el
+   principio, que es lo que hace la flecha abajo desde la tira de pestañas. */
+function dimEnfocar(paso, entrar){
+  const campos = dimCampos();
+  if (!campos.length) return;
+  const actual = campos.indexOf(document.activeElement);
+  let i;
+  if (entrar || actual < 0){
+    i = paso > 0 ? 0 : campos.length - 1;
+  } else {
+    i = Math.max(0, Math.min(campos.length - 1, actual + paso));
+  }
+  const campo = campos[i];
+  campo.focus();
+  // Que se vea cuál quedó con el foco.
+  campos.forEach(c => c.classList.toggle('campo-foco', c === campo));
+  campo.scrollIntoView({ block: 'nearest' });
+}
+
 document.addEventListener('keydown', e => {
   if (!document.querySelector('nav button[data-tab="dim"].active')) return;
   const el = document.activeElement;
-  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
+
+  /* Con una pestaña de Dimensiones abierta, las flechas verticales entran a sus
+     propiedades y recorren los campos. Se atienden ANTES del filtro de abajo,
+     porque también tienen que funcionar cuando el foco está en una casilla. */
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    const enCampos = el && el.closest && el.closest('#pes-dim > .cuerpo');
+    if (enCampos){ e.preventDefault(); dimEnfocar(e.key === 'ArrowDown' ? 1 : -1); return; }
+    if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey && !e.altKey
+        && !(el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT'))){
+      e.preventDefault();
+      dimEnfocar(1, true);
+      return;
+    }
+  }
+
+  // Campos de texto: las flechas son suyas.
+  if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT'
+             || (el.tagName === 'INPUT' && el.type !== 'range'))) return;
+
+  /* Con el foco en un deslizador, las flechas horizontales son suyas: el control
+     nativo las usa para mover el valor y avisa con "input", que es lo que guarda
+     el ajuste. Si se las interceptara desde acá, el valor cambiaría en pantalla
+     pero nunca llegaría al servidor. Las verticales siguen siendo para pasar de
+     un campo a otro (se atienden más arriba). */
+  if (el && el.tagName === 'INPUT' && el.type === 'range'
+      && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
 
   if (e.key === 'Escape'){
     e.preventDefault();
@@ -2744,120 +2837,118 @@ function pintarAtajos(){
   if (typeof pintarAtajosKern === 'function') pintarAtajosKern();
 }
 
-/* Deja el cuerpo de cada pestaña con la altura que sobra hasta el pie de la
-   ventana. Así una pestaña larga se desplaza por dentro y la página no crece:
-   ninguna sección necesita la barra de scroll. */
+/* Ajusta el alto de las pestañas para que ninguna sección necesite la barra de
+   scroll de la página.
+
+   La idea es simple: el cuerpo de la pestaña abierta se queda con el alto que
+   sobra hasta el pie de la ventana. Si su contenido pide más, se desplaza por
+   dentro. Nunca se lo deja crecer más allá de lo que entra.
+
+   Detalles que costaron sangre:
+   - Mientras la sección está oculta no se puede medir nada (el navegador
+     devuelve 0), así que en ese caso no se toca el tope y se espera.
+   - El alto se recalcula en varias pasadas cortas al arrancar, porque las
+     grillas y los deslizadores terminan de acomodarse un instante después.
+   - En Dimensiones el previsualizador lleva alto Y ancho explícitos: al cambiarle
+     el alto, un SVG con viewBox escala el ancho solo y empujaría la caja de
+     controles a otra fila. */
 function ajustarAltoPestanas(){
-  // El fondo es la ventana, no el fondo de <main>: si main ya desborda, su
-  // rectificado queda por debajo de la pantalla y el cálculo daría de más.
-  const fondo = window.innerHeight - 10;
+  const fondo = window.innerHeight - 20;
+
   for (const g of document.querySelectorAll('.pestanas')){
-    // Ojo: una pestaña abierta puede haber estirado la columna que la contiene.
-    // Hay que soltar los topes puestos antes y volver a medir, o cada pasada
-    // tomaría como bueno el alto ya recortado de la anterior.
     const fila = g.closest('.row');
-    let columna = null;
-    if (fila){
-      columna = g;
-      while (columna.parentElement && columna.parentElement !== fila) columna = columna.parentElement;
-      for (const hijo of fila.children){
-        hijo.style.maxHeight = '';
-        hijo.style.overflow = '';
-      }
-      // La otra columna (el previsualizador) no puede pasar del alto libre: los
-      // dos tienen que entrar juntos en la ventana.
-      const altoLibre = Math.max(140, Math.floor(fondo - fila.getBoundingClientRect().top - 20));
-      for (const hijo of fila.children){
-        if (hijo === columna) continue;
-        hijo.style.maxHeight = altoLibre + 'px';
-      }
-    }
-    // Dos pasadas: primero se suelta el tope y se mide lo que el contenido pide
-    // de verdad, para saber dónde queda el grupo con su tamaño natural. Recién
-    // después se calcula cuánto se lo puede dejar crecer.
-    const cuerpos = g.querySelectorAll(':scope > .cuerpo');
+    const cuerpos = [...g.querySelectorAll(':scope > .cuerpo')];
+
+    // Se suelta todo lo que se haya puesto antes, para medir de nuevo.
     for (const c of cuerpos) c.style.maxHeight = '';
+    if (fila) for (const hijo of fila.children){ hijo.style.maxHeight = ''; hijo.style.overflow = ''; }
+
+    // Cuánto pide el contenido de la pestaña ABIERTA. Las otras están en
+    //    display:none y miden 0 (o cualquier cosa), así que no se miran: si se
+    //    tomara el máximo de las tres, el tope saldría de una medida falsa.
     let pide = 0;
-    for (const c of cuerpos) pide = Math.max(pide, c.scrollHeight);
-    const r = g.getBoundingClientRect();
-    // Cuánto ocupa la tira de pestañas: se mide desde la primera etiqueta hasta
-    // donde empieza el primer cuerpo, que va justo debajo. Medir "la última
-    // etiqueta" no sirve: cuando el cuerpo está oculto, sus rectángulos no son
-    // fiables y el cálculo sale inflado.
-    let altoTira = 30;
-    const primera = g.querySelector('label');
-    const primerCuerpo = g.querySelector(':scope > .cuerpo');
-    if (primera && primerCuerpo){
-      const arriba = primera.getBoundingClientRect().top;
-      const abajo = primerCuerpo.getBoundingClientRect().top;
-      if (abajo > arriba) altoTira = Math.ceil(abajo - arriba) + 6;
+    for (const c of cuerpos){
+      if (getComputedStyle(c).display === 'none') continue;
+      pide = Math.max(pide, c.scrollHeight);
     }
-    // Lo que hay desde el grupo hasta el pie de la ventana, sin contar la tira.
-    const libre = Math.floor(fondo - r.top - altoTira - 16);
-    // Si el contenido entra, se lo deja con su tamaño; si no, se lo recorta y la
-    // pestaña se desplaza por dentro. Nunca se agranda de más. El piso de 150 px
-    // es para que la caja siga siendo cómoda aunque la ventana sea baja: en ese
-    // caso la pestaña se desplaza un poco por dentro en vez de quedar aplastada.
-    const limite = Math.max(150, Math.min(Math.ceil(pide), libre));
-    g.style.setProperty('--alto-cuerpo', limite + 'px');
-    for (const c of cuerpos) c.style.maxHeight = limite + 'px';
-    // Si lo que hay arriba deja poco lugar, se acota la columna de controles a lo
-    // que entra: la caja se desplaza por dentro y la página no gana scroll.
-    if (fila){
-      const altoFila = Math.max(120, Math.floor(fondo - fila.getBoundingClientRect().top - 14));
-      // align-items:flex-start evita que las columnas se estiren, y a cada una se
-      // le da un ALTO (no un tope): en una caja de bloque un max-height no recorta
-      // a los hijos, que se desbordan igual.
-      fila.style.alignItems = 'flex-start';
-      // El previsualizador de Dimensiones fija su alto por CSS: si se le cambia el
-      // ancho, el SVG con viewBox escala el ancho solo y empujaría la caja de
-      // controles a otra fila. Por eso se le da alto y ancho explícitos.
+    if (!pide) continue;            // ninguna pestaña visible: no se puede medir
+
+    // Cuánto ocupa la tira de pestañas: de la primera etiqueta al primer cuerpo.
+    let tira = 30;
+    const primera = g.querySelector('label');
+    const primerCuerpo = cuerpos[0];
+    if (primera && primerCuerpo){
+      const d = primerCuerpo.getBoundingClientRect().top - primera.getBoundingClientRect().top;
+      if (d > 0) tira = Math.ceil(d) + 8;
+    }
+
+    // El alto disponible: el que hay hasta el pie de la ventana.
+    const top = g.getBoundingClientRect().top;
+    let disponible = Math.floor(fondo - top - tira - 12);
+
+    // El previsualizador de Dimensiones se achica si hace falta, para que las
+    //    dos columnas entren juntas.
+    if (fila && fila.id === 'dimFila'){
       const svg = document.getElementById('dimSvg');
       const ctl = document.getElementById('dimCtl');
-      if (fila.id === 'dimFila' && svg && ctl){
-        const altoSvg = Math.min(330, altoFila);
+      if (svg){
+        // Tope de 260 px: el previsualizador no necesita más, y lo que se le
+        // quita se lo queda la caja de controles, que es la que tiene contenido
+        // que no puede quedar recortado.
+        const altoSvg = Math.max(200, Math.min(295, Math.floor(fondo - fila.getBoundingClientRect().top - 20)));
         svg.style.height = altoSvg + 'px';
         svg.style.width = Math.round(altoSvg * 460 / 330) + 'px';
-        svg.style.maxHeight = '';
-        svg.style.overflow = '';
+      }
+      if (ctl){
+        fila.style.alignItems = 'flex-start';
         ctl.style.flex = '1 1 auto';
         ctl.style.minWidth = '0';
-        // El alto de la caja lo fija lo que mida su contenido, con el tope de la
-        // ventana: si se lo fija de antemano queda una barra de scroll de más.
         ctl.style.height = '';
-        ctl.style.maxHeight = altoFila + 'px';
+      }
+    }
+
+    // El tope: lo que pide el contenido, sin pasarse de lo que entra. El piso
+    //    de 150 px mantiene la caja cómoda; si no entra, se recorta a lo que hay.
+    const tope = Math.max(150, Math.min(Math.ceil(pide), Math.max(120, disponible)));
+    g.style.setProperty('--alto-cuerpo', tope + 'px');
+    for (const c of cuerpos) c.style.maxHeight = tope + 'px';
+
+    // La caja de controles no puede pasarse de lo que entra. Su contenido es
+    //    lo que hay que acotar: dejar el alto puesto pero el contenido suelto no
+    //    recorta nada, porque en una caja de bloque los hijos se desbordan.
+    if (fila && fila.id === 'dimFila'){
+      const ctl = document.getElementById('dimCtl');
+      if (ctl){
+        const altoCaja = Math.max(140, disponible + tira);
+        ctl.style.height = altoCaja + 'px';
+        ctl.style.maxHeight = altoCaja + 'px';
         ctl.style.overflow = 'auto';
-        // Se vuelve a medir: al cambiar el ancho de la caja, los deslizadores
-        // pasan a dos columnas y el alto que necesitan ya no es el de antes.
-        for (const c of cuerpos) c.style.maxHeight = '';
-        let pide2 = 0;
-        for (const c of cuerpos) pide2 = Math.max(pide2, c.scrollHeight);
-        const cuerpoAlto = Math.max(110, Math.min(Math.ceil(pide2), altoFila - altoTira - 14));
-        for (const c of cuerpos) c.style.maxHeight = cuerpoAlto + 'px';
-        // Si el contenido entra justo, se quita el desplazamiento interno: un
-        // par de píxeles de redondeo dejaban una barra que no hacía falta.
-        if (ctl.scrollHeight - ctl.clientHeight <= 3) ctl.style.overflow = 'visible';
-      } else {
-        for (const hijo of fila.children){
-          hijo.style.height = Math.max(120, altoFila - 2) + 'px';
-          hijo.style.maxHeight = Math.max(120, altoFila - 2) + 'px';
-          hijo.style.overflow = 'auto';
-        }
-        const cuerpoAlto = Math.max(110, Math.min(Math.ceil(pide), altoFila - altoTira - 14));
-        for (const c of cuerpos) c.style.maxHeight = cuerpoAlto + 'px';
+        const cuerpoAlto = Math.max(120, altoCaja - tira - 6);
+        for (const c of cuerpos) c.style.maxHeight = Math.min(tope, cuerpoAlto) + 'px';
       }
     }
   }
 
-  // Último recurso, sólo si con la ventana muy baja el contenido de arriba ya no
-  // deja lugar: la sección se desplaza por dentro. Se mide ANTES de tocar nada,
-  // porque si no cada pasada tomaría como bueno el alto ya recortado.
+  // Último recurso: si aun así la sección activa se pasa de la ventana (pasa
+  //    con ventanas bajas, donde el contenido no entra de ninguna manera), se
+  //    recorta el cuerpo de la pestaña abierta: se desplaza la pestaña, no la
+  //    página.
   for (const sec of document.querySelectorAll('section')){
-    if (!sec.classList.contains('active')){ sec.style.maxHeight = ''; sec.style.overflow = ''; continue; }
     sec.style.maxHeight = '';
     sec.style.overflow = '';
+    if (!sec.classList.contains('active')) continue;
     const sobra = sec.scrollHeight - fondo;
-    if (sobra > 2){
+    if (sobra <= 2) continue;
+    const g = sec.querySelector('.pestanas');
+    if (g){
+      const abierto = [...g.querySelectorAll(':scope > .cuerpo')]
+        .find(c => getComputedStyle(c).display !== 'none');
+      const actual = abierto ? (parseFloat(abierto.style.maxHeight) || 0) : 0;
+      if (abierto && actual > 120){
+        abierto.style.maxHeight = Math.max(120, actual - sobra) + 'px';
+      }
+    }
+    if (sec.scrollHeight - fondo > 2){
       sec.style.maxHeight = Math.max(200, window.innerHeight - 36) + 'px';
       sec.style.overflow = 'auto';
     }
@@ -2970,6 +3061,9 @@ async function loadStatus(){
     renderCompare();
     fillTraceUI();
     drawDim(); drawPair(); drawBasePrev();
+    // Recién acá existen los deslizadores (antes no hay glifo elegido), así que
+    // hay que volver a medir: si no, la pestaña de Ajustes queda recortada.
+    if (typeof ajustarAltoPestanas === 'function') ajustarAltoPestanas();
   }
   renderKerningTable();
   if (document.querySelector('nav button[data-tab="words"].active')) renderWord();
@@ -3408,7 +3502,7 @@ if ($('cmpAdd')) $('cmpAdd').onclick = () => addToCompare(S.char);
 if ($('cmpClear')) $('cmpClear').onclick = () => { CMP.base = null; renderCompare(); drawDim(); };
 if ($('kvS')) {
   $('kvS').onchange = savePair;
-  $('kvS').oninput = () => { S.busyUntil = Date.now() + 1500; $('kvOut').textContent = $('kvS').value; drawPair(); };
+  $('kvS').oninput = () => { S.busyUntil = Date.now() + 4000; $('kvOut').textContent = $('kvS').value; drawPair(); };
 }
 if ($('kvSave')) $('kvSave').onclick = () => kernSave();
 
@@ -4302,7 +4396,10 @@ tourMountButtons();
   /* Los atajos de cada sección se dibujan como fichas, igual que en el menú. */
   if (typeof pintarAtajos === 'function') pintarAtajos();
   if (typeof ajustarAltoPestanas === 'function'){
+    // Varias pasadas cortas: en el primer instante el navegador todavía no
+    // terminó de medir las grillas, y el alto calculado quedaría corto.
     ajustarAltoPestanas();
+    for (const ms of [60, 250, 800]) setTimeout(ajustarAltoPestanas, ms);
     window.addEventListener('resize', ajustarAltoPestanas);
     // Al cambiar de sección o de pestaña cambia el alto disponible. Ojo: hacer
     // clic en la etiqueta de un radio no dispara "change" (solo lo hace si se
