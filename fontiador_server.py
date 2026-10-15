@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.8"
+APP_VERSION = "0.2.9"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -373,7 +373,7 @@ def update_estado():
     with _UPDATE_LOCK:
         d = dict(_UPDATE)
     d["porcentaje"] = (round(100.0 * d["bytes"] / d["total"]) if d["total"] else 0)
-    d["actual"] = APP_VERSION
+    d["actual"] = os.environ.get("FONTIADOR_VERSION_SIMULADA") or APP_VERSION
     return d
 
 
@@ -520,8 +520,12 @@ def check_update():
     import urllib.error
     import urllib.request
 
+    # Para poder probar la actualización sin esperar a que salga una versión
+    # nueva: con FONTIADOR_VERSION_SIMULADA=0.2.0 la app se hace pasar por vieja.
+    version = os.environ.get("FONTIADOR_VERSION_SIMULADA") or APP_VERSION
+
     resultado = {
-        "actual": APP_VERSION,
+        "actual": version,
         "repo": REPO,
         "repositorio": REPO_URL,
         "descarga": REPO_URL + "/releases/latest",
@@ -593,7 +597,7 @@ def check_update():
         # Los archivos son un extra: si fallan, igual se puede avisar de la versión.
         log("No se pudieron leer los archivos de la release: %s" % type(e).__name__)
 
-    if resultado["nueva"] and _version_menor(APP_VERSION, etiqueta):
+    if resultado["nueva"] and _version_menor(version, etiqueta):
         resultado["disponible"] = True
     return resultado
 
@@ -1685,10 +1689,9 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
       </div>
     </div>
 
-    <!-- El lote va ancho, abajo de los placeholders y de la rejilla: así los tres
-         ajustes entran en una fila y no hace falta desplazarse. -->
+    <!-- El ajuste va ancho, y LOTE queda al final, debajo de todo. -->
     <div class="bloque">
-      <h4 class="titulo-bloque">Ajuste para todo el lote</h4>
+      <h4 class="titulo-bloque">Ajustes para todo el lote</h4>
       <div class="row loterow">
         <div class="campo">
           <span>Izquierda: <b id="kbLv" style="color:var(--ok)">0</b></span>
@@ -4459,7 +4462,7 @@ class Handler(BaseHTTPRequestHandler):
                         "nueva": None, "error": "%s: %s" % (type(e).__name__, e)}
             if info.get("disponible"):
                 log("Hay una versión nueva disponible: %s (tenés la %s)."
-                    % (info.get("nueva"), APP_VERSION))
+                    % (info.get("nueva"), info.get("actual")))
             self._send(200, json.dumps(info, ensure_ascii=False))
         # El avance de la descarga se pide sin cuerpo, así que llega por GET.
         elif ruta == "/api/update/progress":

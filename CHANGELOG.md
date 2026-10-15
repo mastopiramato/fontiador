@@ -4,7 +4,27 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿﻿﻿﻿## [0.2.8] — 2026-10-16
+﻿﻿﻿﻿﻿﻿## [0.2.9] — 2026-10-16
+
+### Añadido
+
+- `probar_actualizacion.py`: abre la app haciéndose pasar por una versión vieja,
+  para poder probar la actualización sin esperar a que salga una versión nueva.
+  Con datos aparte, así no toca el proyecto.
+
+### Cambiado
+
+- **Kerning base**: LOTE queda al final, debajo de los placeholders y de los
+  ajustes, como corresponde. El ajuste va ancho, en una sola fila.
+
+### Nota
+
+La 0.2.7 no podía descargar nada: los cuatro defectos que se arreglaron en la
+0.2.8. Como la 0.2.8 pasó a ser la última publicada, ya no había versión nueva
+que descargar, así que el arreglo no se podía comprobar desde la app. Por eso
+se agrega el modo de prueba.
+
+## [0.2.8] — 2026-10-16
 
 ### Corregido
 
