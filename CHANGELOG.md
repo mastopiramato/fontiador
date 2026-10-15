@@ -4,6 +4,28 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
+## [0.2.2] — 2026-10-15
+
+### Corregido
+
+- La app **instalada** no mostraba ningún tutorial: `tutorial.json` no viajaba
+  dentro del paquete. Ahora se incluye, y la búsqueda de recursos propios
+  contempla la carpeta del paquete además de la raíz del proyecto.
+- La **fuente de ejemplo** daba 404 en la app instalada por el mismo motivo:
+  se la buscaba en la carpeta de datos del usuario, cuando viaja dentro del
+  paquete. Se unifica en `fontiador_paths.buscar_recurso()`, que prueba la
+  carpeta de datos, la del paquete y la del proyecto, en ese orden.
+
+### Añadido
+
+- `packaging/subir_version.py`, para subir la versión en todos los archivos de
+  una sola vez.
+
+### Cambiado
+
+- Se quitaron varios subtítulos que explicaban lo que ya se ve o lo que el
+  tutorial ya cuenta. Se conservan los atajos de teclado.
+
 ## [0.2.0] — 2026-10-15
 
 Primera versión publicada.

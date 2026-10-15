@@ -33,7 +33,7 @@ Para probarlo sin ensuciar tu instalación:
 
 ```powershell
 $dest = "$env:TEMP\FontiadorTest"
-.\dist\installer\Fontiador-0.2.1-win-x64-setup.exe /VERYSILENT "/DIR=$dest"
+.\dist\installer\Fontiador-<versión>-win-x64-setup.exe /VERYSILENT "/DIR=$dest"
 ```
 
 **El instalador por usuario no borra los datos del usuario.** Al desinstalar se
@@ -65,11 +65,32 @@ Para activarlo alcanza con cargar los secretos `AZURE_TENANT_ID`,
 
 ## Publicar una versión
 
-1. Actualizá `APP_VERSION` en `fontiador_server.py` y la versión en
-   `packaging/windows/fontiador.iss`.
-2. `git tag v0.2.1 && git push origin v0.2.1`
-3. El flujo `Release` compila las tres plataformas, calcula `SHA256SUMS` y crea
-   un borrador de release con los artefactos adjuntos.
+Cada versión publicada es un conjunto nuevo de paquetes: las descargas de
+`releases/latest` siempre apuntan a la última. Para publicar:
+
+1. Subí la versión en todos lados de una sola vez:
+
+   ```bash
+   py packaging/subir_version.py 0.2.3 0.2.2
+   ```
+
+2. Commiteá y empujá el código.
+3. Creá y empujá la etiqueta:
+
+   ```bash
+   git tag -a v0.2.3 -m "Fontiador 0.2.3" && git push origin v0.2.3
+   ```
+
+4. El flujo `Release` compila Windows y Linux, calcula `SHA256SUMS` y publica la
+   versión con los cuatro paquetes adjuntos (`setup.exe`, `.AppImage`, `.deb` y
+   `.rpm`).
+
+Si hace falta recompilar una versión ya publicada sin volver a etiquetar,
+se puede lanzar el flujo a mano (`workflow_dispatch`): toma la etiqueta a partir
+de `APP_VERSION` y actualiza esa release en lugar de crear otra.
+
+Conviene borrar las releases viejas cuando quedan obsoletas, para que nadie baje
+por error un paquete con errores. Las etiquetas se pueden dejar.
 
 ## Pruebas
 
