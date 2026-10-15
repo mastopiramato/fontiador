@@ -4,7 +4,37 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
-﻿﻿## [0.2.5] — 2026-10-16
+﻿﻿﻿## [0.2.6] — 2026-10-16
+
+### Añadido
+
+- **La actualización se descarga e instala desde la app**, con barra de progreso:
+  *Buscar actualizaciones* (en Inicio → Versión) ofrece **Descargar e instalar**
+  y, al terminar, **Instalar y reiniciar**. En Windows corre el instalador y
+  reinicia la app; en Linux reemplaza el AppImage (o abre el paquete del
+  sistema).
+
+### Corregido
+
+- **La comprobación de actualizaciones ya no usa la API de GitHub.** Sin
+  credenciales permite 60 consultas por hora y responde 403 enseguida, con lo
+  que la app decía "El repositorio respondió 403". Ahora se leen dos direcciones
+  normales del sitio (la redirección de `releases/latest` y la página que lista
+  los adjuntos), que no tienen ese límite.
+
+### Cambiado
+
+- **Fuente**: se fueron el botón *Restablecer tutoriales* y la pestaña
+  *Avanzado*. Los conjuntos de caracteres se ven siempre, sin botón.
+- **Dimensiones**: la caja de ajustes ocupa el ancho que sobra y los
+  deslizadores van en dos columnas, así entran todos sin recortes.
+- **Kerning**: *Kerning manual* · *Kerning base* · *Pares guardados* (la tabla de
+  pares pasó a su propia solapa). Las dos primeras comparten diseño: el
+  visualizador a la izquierda y los controles a la derecha.
+- Las instrucciones ya no nombran teclas: los atajos se muestran aparte, con más
+  aire entre uno y otro y con la explicación sin recuadro y en cursiva.
+
+## [0.2.5] — 2026-10-16
 
 ### Cambiado
 

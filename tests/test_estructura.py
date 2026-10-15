@@ -140,8 +140,14 @@ def test_secciones():
     # Los bloques largos tienen que ser pestañas, no paneles que crezcan la
     # página: si no, vuelve la barra de scroll.
     check("no quedan paneles desplegables", 'plegable' not in page)
-    check("hay pestañas en Dimensiones, Inicio y Fuente",
-          all(('id="pes-%s"' % t) in page for t in ("dim", "imp", "font")))
+    check("hay pestañas en Dimensiones e Inicio",
+          all(('id="pes-%s"' % t) in page for t in ("dim", "imp")))
+    check("Fuente ya no tiene pestañas", 'id="pes-font"' not in page)
+    check("Conjuntos se ve siempre, sin botón", 'id="cs_upper"' in page)
+    check("no queda el botón de restablecer tutoriales",
+          'id="tourReset"' not in page)
+    check("Kerning tiene tres solapas",
+          all(('id="ksub-%s"' % t) in page for t in ("pair", "base", "pares")))
 
     # Tildes va antes que Palabras.
     check("Tildes está antes que Palabras",
@@ -338,7 +344,7 @@ def test_actualizaciones():
     print("Actualizaciones")
     import fontiador_server as s
     check("repo configurado", "/" in s.REPO, s.REPO)
-    check("url de la api coherente", s.REPO in s.RELEASES_API, s.RELEASES_API)
+    check("la url del repositorio es coherente", s.REPO in s.REPO_URL, s.REPO_URL)
     casos = [
         ("0.2.0", "v0.2.0", False),
         ("0.2.0", "v0.3.0", True),
@@ -354,8 +360,15 @@ def test_actualizaciones():
     # Nunca debe lanzar, ni siquiera sin internet.
     info = s.check_update()
     check("check_update devuelve un diccionario", isinstance(info, dict))
-    for campo in ("actual", "repo", "disponible", "descarga", "repositorio"):
+    for campo in ("actual", "repo", "disponible", "descarga", "repositorio", "archivos"):
         check("check_update incluye %s" % campo, campo in info)
+
+    # La API de GitHub sin credenciales permite 60 consultas por hora y responde
+    # 403 enseguida, así que la comprobación no puede depender de ella.
+    src = open(os.path.join(RAIZ, "fontiador_server.py"), encoding="utf-8").read()
+    check("no se usa la API de GitHub", "api.github.com" not in src)
+    check("no se usa urllib en check_update por la API",
+          "RELEASES_API" not in src)
 
 
 def test_rutas():

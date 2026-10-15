@@ -29,12 +29,11 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.5"
+APP_VERSION = "0.2.6"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
 REPO_URL = "https://github.com/" + REPO
-RELEASES_API = "https://api.github.com/repos/%s/releases/latest" % REPO
 
 RENDER_CELL = 1000
 RENDER_COLS = 10
@@ -350,12 +349,174 @@ def _version_menor(a, b):
     return ta < tb
 
 
+# ---------------------------------------------------------------- actualización
+# Descarga del paquete nuevo y su instalación. Todo pasa por acá para que la
+# interfaz solo tenga que mirar el estado.
+_UPDATE = {
+    "estado": "quieto",     # quieto | descargando | listo | instalando | error
+    "version": None,
+    "archivo": None,
+    "bytes": 0,
+    "total": 0,
+    "error": None,
+    "mensaje": None,
+}
+_UPDATE_LOCK = threading.Lock()
+
+
+def _update_set(**kw):
+    with _UPDATE_LOCK:
+        _UPDATE.update(kw)
+
+
+def update_estado():
+    with _UPDATE_LOCK:
+        d = dict(_UPDATE)
+    d["porcentaje"] = (round(100.0 * d["bytes"] / d["total"]) if d["total"] else 0)
+    d["actual"] = APP_VERSION
+    return d
+
+
+def _nombre_instalador(nombre):
+    """Qué archivo de la release le corresponde a este sistema."""
+    n = (nombre or "").lower()
+    if sys.platform.startswith("win"):
+        return n.endswith(".exe") and "setup" in n
+    if sys.platform == "darwin":
+        return n.endswith(".dmg") or n.endswith(".pkg")
+    # Linux: AppImage si se está usando uno; si no, el .deb o el .rpm.
+    if n.endswith(".appimage"):
+        return True
+    return n.endswith(".deb") or n.endswith(".rpm")
+
+
+def _descargar(url, destino, total):
+    """Baja el archivo informando el avance."""
+    import urllib.request
+
+    req = urllib.request.Request(url, headers={"User-Agent": "Fontiador/%s" % APP_VERSION})
+    with urllib.request.urlopen(req, timeout=30) as r, open(destino, "wb") as f:
+        if not total:
+            total = int(r.headers.get("Content-Length") or 0)
+        leido = 0
+        while True:
+            trozo = r.read(256 * 1024)
+            if not trozo:
+                break
+            f.write(trozo)
+            leido += len(trozo)
+            _update_set(bytes=leido, total=total)
+
+
+def _hilo_descarga(url, destino, total, version):
+    try:
+        _descargar(url, destino, total)
+        if sys.platform == "darwin" or not sys.platform.startswith("win"):
+            try:
+                os.chmod(destino, 0o755)
+            except OSError:
+                pass
+        _update_set(estado="listo", archivo=destino, version=version,
+                    mensaje="Listo para instalar.")
+    except Exception as e:                      # noqa: BLE001 - se informa al usuario
+        log("Error bajando la actualización: %s: %s" % (type(e).__name__, e))
+        _update_set(estado="error", error="No se pudo descargar: %s" % e)
+
+
+def update_descargar(info=None):
+    """Empieza a bajar la versión nueva. Devuelve el estado inicial."""
+    with _UPDATE_LOCK:
+        if _UPDATE["estado"] == "descargando":
+            return update_estado()
+    info = info or check_update()
+    if not info.get("disponible"):
+        return {"error": "No hay ninguna versión nueva para descargar."}
+    # Se elige el archivo que sirva para este sistema.
+    candidatos = [a for a in (info.get("archivos") or []) if _nombre_instalador(a.get("nombre"))]
+    if not candidatos:
+        return {"error": "La versión nueva no trae un paquete para este sistema.",
+                "repositorio": info.get("descarga")}
+    elegido = max(candidatos, key=lambda a: 0 if "appimage" in (a.get("nombre") or "").lower() else 1)
+    destino = os.path.join(fontiador_paths.BASE_DIR, elegido["nombre"])
+    _update_set(estado="descargando", version=info.get("nueva"), archivo=destino,
+                bytes=0, total=elegido.get("bytes") or 0, error=None,
+                mensaje="Descargando %s…" % elegido["nombre"])
+    hilo = threading.Thread(
+        target=_hilo_descarga,
+        args=(elegido["url"], destino, elegido.get("bytes") or 0, info.get("nueva")),
+        daemon=True)
+    hilo.start()
+    return update_estado()
+
+
+def update_aplicar():
+    """Instala lo bajado y reinicia la app."""
+    with _UPDATE_LOCK:
+        estado = _UPDATE["estado"]
+        archivo = _UPDATE["archivo"]
+    if estado != "listo" or not archivo or not os.path.isfile(archivo):
+        return {"error": "Todavía no hay nada descargado para instalar."}
+    _update_set(estado="instalando", mensaje="Instalando…")
+    try:
+        if sys.platform.startswith("win"):
+            # Inno Setup: instala y después reinicia la app. /SILENT muestra el
+            # avance sin pedir nada.
+            import subprocess
+            subprocess.Popen([archivo, "/SILENT", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS"],
+                             close_fds=True)
+            threading.Timer(1.2, lambda: os._exit(0)).start()
+            return {"ok": True, "mensaje": "Instalando. La app se reinicia sola."}
+        if sys.platform == "darwin":
+            import subprocess
+            subprocess.Popen(["open", archivo], close_fds=True)
+            threading.Timer(1.2, lambda: os._exit(0)).start()
+            return {"ok": True, "mensaje": "Se abrió el instalador."}
+        # Linux: si corremos como AppImage, se reemplaza el archivo y se relanza.
+        actual = os.environ.get("APPIMAGE")
+        if actual and archivo.lower().endswith(".appimage"):
+            import subprocess
+            respaldo = actual + ".viejo"
+            shutil.copy2(actual, respaldo)
+            shutil.copy2(archivo, actual)
+            os.chmod(actual, 0o755)
+            try:
+                os.remove(respaldo)
+            except OSError:
+                pass
+            subprocess.Popen([actual], close_fds=True)
+            threading.Timer(1.2, lambda: os._exit(0)).start()
+            return {"ok": True, "mensaje": "Actualizado. La app se reinicia sola."}
+        # .deb o .rpm: se abre con el instalador del sistema.
+        import subprocess
+        for cmd in (["xdg-open", archivo], ["gio", "open", archivo]):
+            try:
+                subprocess.Popen(cmd, close_fds=True)
+                break
+            except OSError:
+                continue
+        else:
+            return {"error": "No se pudo abrir el paquete. Está en: " + archivo}
+        return {"ok": True, "mensaje": "Se abrió el instalador del sistema."}
+    except Exception as e:                      # noqa: BLE001
+        log("Error instalando la actualización: %s: %s" % (type(e).__name__, e))
+        _update_set(estado="error", error="No se pudo instalar: %s" % e)
+        return {"error": "No se pudo instalar: %s" % e}
+
+
 def check_update():
     """Consulta la última release publicada en el repositorio.
+
+    No se usa la API de GitHub: sin credenciales permite muy pocas consultas por
+    hora y responde 403 enseguida. En su lugar se leen dos direcciones normales
+    del sitio, que no tienen ese límite:
+
+      - /releases/latest  redirige a /releases/tag/vX.Y.Z  -> de ahí sale la versión
+      - /releases/expanded_assets/vX.Y.Z                   -> de ahí salen los archivos
 
     Devuelve siempre un diccionario: si no hay internet o el repositorio todavía
     no tiene releases, se informa como error y la app sigue funcionando igual.
     """
+    import re
     import urllib.error
     import urllib.request
 
@@ -368,44 +529,71 @@ def check_update():
         "nueva": None,
         "notas": None,
         "publicada": None,
+        "archivos": [],
         "error": None,
     }
-    req = urllib.request.Request(
-        RELEASES_API,
-        headers={"Accept": "application/vnd.github+json",
-                 "User-Agent": "Fontiador/%s" % APP_VERSION},
-    )
+    agente = {"User-Agent": "Fontiador/%s" % APP_VERSION}
+
+    # 1) La versión publicada, leyendo a dónde redirige "latest".
+    class _SinRedireccion(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *a, **k):
+            return None
+
     try:
-        with urllib.request.urlopen(req, timeout=8) as r:
-            datos = json.loads(r.read().decode("utf-8", "replace"))
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            # El repositorio existe pero todavía no hay ninguna release publicada.
-            resultado["error"] = ("Todavía no hay ninguna versión publicada en el "
-                                  "repositorio.")
-        else:
-            resultado["error"] = "El repositorio respondió %s." % e.code
-        return resultado
+        abridor = urllib.request.build_opener(_SinRedireccion)
+        try:
+            abridor.open(REPO_URL + "/releases/latest", timeout=8)
+            resultado["error"] = ("No se pudo leer la versión publicada: el "
+                                  "repositorio no redirigió a ninguna etiqueta.")
+            return resultado
+        except urllib.error.HTTPError as e:
+            if e.code not in (301, 302, 303, 307, 308):
+                if e.code == 404:
+                    resultado["error"] = ("Todavía no hay ninguna versión publicada "
+                                          "en el repositorio.")
+                else:
+                    resultado["error"] = "El repositorio respondió %s." % e.code
+                return resultado
+            destino = e.headers.get("Location") or ""
     except Exception as e:
         resultado["error"] = ("No se pudo consultar el repositorio (%s). "
                               "¿Hay conexión a internet?" % type(e).__name__)
         return resultado
 
-    etiqueta = datos.get("tag_name") or datos.get("name") or ""
+    m = re.search(r"/releases/tag/([^/?#]+)", destino)
+    if not m:
+        resultado["error"] = "No se pudo entender la versión publicada."
+        return resultado
+    etiqueta = m.group(1)
     resultado["nueva"] = etiqueta.lstrip("vV") or None
-    resultado["notas"] = (datos.get("body") or "").strip()[:4000] or None
-    resultado["publicada"] = (datos.get("published_at") or "")[:10] or None
-    if datos.get("html_url"):
-        resultado["descarga"] = datos["html_url"]
+    resultado["descarga"] = REPO_URL + "/releases/tag/" + etiqueta
 
-    # Enlaces directos a los instaladores, si la release los trae adjuntos.
-    archivos = []
-    for a in datos.get("assets") or []:
-        nombre = a.get("name") or ""
-        archivos.append({"nombre": nombre, "url": a.get("browser_download_url"),
-                         "bytes": a.get("size")})
-    resultado["archivos"] = archivos
-    if etiqueta and _version_menor(APP_VERSION, etiqueta):
+    # 2) Los archivos adjuntos, desde la página que GitHub usa para listarlos.
+    try:
+        req = urllib.request.Request(
+            "%s/releases/expanded_assets/%s" % (REPO_URL, etiqueta), headers=agente)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            html = r.read().decode("utf-8", "replace")
+        # Cada adjunto es un <a href="/.../releases/download/..."> con el nombre
+        # dentro de un <span>; por eso el patrón llega hasta </a>.
+        for m in re.finditer(
+                r'href="(/[^"]*/releases/download/[^"]+)"[^>]*>(.*?)</a>', html, re.S):
+            ruta = m.group(1)
+            nombre = re.sub(r"<[^>]+>", " ", m.group(2))
+            nombre = re.sub(r"\s+", " ", nombre).strip()
+            # El nombre de repuesto es el último tramo de la ruta.
+            if not nombre:
+                nombre = ruta.rstrip("/").split("/")[-1]
+            resultado["archivos"].append({
+                "nombre": nombre,
+                "url": "https://github.com" + ruta,
+                "bytes": 0,
+            })
+    except Exception as e:
+        # Los archivos son un extra: si fallan, igual se puede avisar de la versión.
+        log("No se pudieron leer los archivos de la release: %s" % type(e).__name__)
+
+    if resultado["nueva"] and _version_menor(APP_VERSION, etiqueta):
         resultado["disponible"] = True
     return resultado
 
@@ -1226,9 +1414,36 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .pestanas>.cuerpo .slider:last-of-type{margin-bottom:.4em}
 .pestanas>.cuerpo h4{margin:0 0 .5em;font-size:.92em;font-weight:600;color:var(--muted)}
 .ctl{width:340px;max-width:100%}
+/* La caja de controles de Dimensiones ocupa lo que sobre de ancho: los
+   deslizadores necesitan lugar, no una columna angosta. */
+.ctl.ancha,#dimCtl{flex:1 1 520px;width:auto;min-width:360px;max-width:100%}
+/* En la caja ancha de Dimensiones los deslizadores van en dos columnas: entran
+   todos sin que la caja tenga que crecer ni desplazarse. */
+#dimCtl #sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 1.1em}
+#dimCtl #sliders .slider{margin-bottom:.7em}
 /* Envoltorio que se desplaza por dentro cuando la ventana es baja, para que la
    sección de Kerning tampoco necesite la barra de scroll de la página. */
-.scrollsec{max-height:calc(100vh - 130px);overflow:auto}
+.scrollsec{max-height:calc(100vh - 90px);overflow:auto}
+/* Bloques con etiqueta propia: agrupan controles y les dan aire. */
+.bloque{margin-top:1.2em;padding-top:1em;border-top:1px solid var(--line)}
+.bloque:first-child{margin-top:0;padding-top:0;border-top:0}
+.titulo-bloque{margin:0 0 .7em;font-size:.95em;font-weight:600;color:var(--text)}
+.tabla-chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5em 1.2em}
+.tabla-chk .chk{margin:0}
+.campo{margin:0 0 .9em}
+.campo>span{display:block;margin-bottom:.35em;font-size:.9em;color:var(--muted)}
+/* La fila de Kerning: el visualizador a la izquierda y los controles a la
+   derecha, igual en las dos solapas. */
+.kernfila{align-items:stretch;gap:1.2em}
+.kernfila .viscol{flex:1 1 340px;min-width:280px}
+.kernfila .ctl{flex:0 1 400px;width:400px;min-width:310px;max-width:100%}
+.kernfila .ctl .bloque{margin-top:1em;padding-top:.9em}
+.kernfila .scrollsec{max-height:none}
+.paso{margin:0 0 .2em;font-size:.95em}
+.paso b{color:var(--ok)}
+/* Barra de progreso (descarga de la actualización). */
+.barra{height:10px;border-radius:6px;background:#111;border:1px solid var(--line);overflow:hidden}
+.barra>i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s ease}
 .slider{margin-bottom:1em}
 .slider .head{display:flex;justify-content:space-between;font-size:.9em;color:var(--muted);margin-bottom:.2em}
 .slider .head b{color:var(--text);font-variant-numeric:tabular-nums}
@@ -1297,11 +1512,12 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 /* ---------- Atajos de teclado por sección ----------
    Cada atajo es un grupo: las teclas llevan recuadro, la explicación va sin
    borde y separada, para que se distinga qué se aprieta de para qué sirve. */
-.atajos{display:flex;flex-wrap:wrap;align-items:center;gap:.4em .9em;margin:0 0 .9em;font-size:.86em;color:var(--muted)}
-.atajos .rot{color:#888;margin-right:.1em}
-.atajo{display:inline-flex;align-items:center;gap:.28em}
-.atajo .teclas{display:inline-flex;align-items:center;gap:.22em}
-.atajo .para{color:#8fa88a;margin-left:.35em;font-style:italic}
+.atajos{display:flex;flex-wrap:wrap;align-items:center;gap:.55em 1.5em;margin:0 0 1.2em;font-size:.86em;color:var(--muted);
+  padding-bottom:.7em;border-bottom:1px solid #2a2a2a}
+.atajos .rot{color:#777;margin-right:.2em;letter-spacing:.02em}
+.atajo{display:inline-flex;align-items:center;gap:.4em;padding:.15em 0}
+.atajo .teclas{display:inline-flex;align-items:center;gap:.28em}
+.atajo .para{color:#8fa88a;margin-left:.15em;font-style:italic;opacity:.9}
 kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;border-radius:5px;
   padding:.08em .42em;font-family:ui-monospace,Consolas,monospace;font-size:.92em;color:#ddd;white-space:nowrap}
 #updBanner a{color:var(--ok)}
@@ -1343,18 +1559,19 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   <input type="text" id="charSearch" placeholder="Buscar carácter…" style="width:220px">
   <button class="btn sec" id="reloadBtn" title="Recargar glifos desde el servidor">↻ Recargar</button>
   <button class="btn sec" id="debugBtn" title="Vuelca máscara y trazado de la celda actual a output/debug/">🔍 Diagnóstico</button>
-  <span class="muted">Clic: seleccionar · Mayús+clic o Mayús+flechas: multiselección · Ctrl+clic: comparar · Enter: solo este · Ctrl+Enter: toggle</span>
+  <span class="muted">Elegí el glifo a editar en la rejilla</span>
 </div>
 <div id="dimCats" class="row" style="gap:.3em;margin-bottom:.3em"></div>
 <div class="chars" id="dimChars"></div>
-<div class="row">
+<div class="row" id="dimFila" style="gap:1.2em">
 <svg id="dimSvg" class="preview" viewBox="-300 -200 2000 1400" style="width:520px;height:360px"></svg>
-<div class="panel ctl">
+<div class="panel ctl" id="dimCtl">
   <div class="pestanas" id="pes-dim" style="margin-top:0">
     <input type="radio" name="p-dim" id="p-dim-1" checked><label for="p-dim-1">Ajustes</label>
     <input type="radio" name="p-dim" id="p-dim-2"><label for="p-dim-2">Trazado del pincel</label>
     <input type="radio" name="p-dim" id="p-dim-3"><label for="p-dim-3">Comparar tamaños</label>
     <div class="cuerpo">
+      <h4>Ajustes del glifo</h4>
       <label class="chk"><input type="checkbox" id="lockChk" checked> Escala bloqueada a proporción</label>
       <div class="row" style="gap:.5em;margin:.4em 0 .8em">
         <button class="btn sec" id="resetRatio">Proporción original</button>
@@ -1400,43 +1617,99 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 </section>
 
 <section id="tab-kern">
-  <div class="subtabs" style="display:flex;gap:.3em;margin-bottom:1em">
-    <button class="btn sec ksubtab active" data-ksub="pair">Manual por par</button>
-    <button class="btn sec ksubtab" data-ksub="base">Base por lote</button>
+  <div class="subtabs" style="display:flex;gap:.3em;margin-bottom:.9em">
+    <button class="btn sec ksubtab active" data-ksub="pair">Kerning manual</button>
+    <button class="btn sec ksubtab" data-ksub="base">Kerning base</button>
+    <button class="btn sec ksubtab" data-ksub="pares">Pares guardados</button>
   </div>
 
   <div id="ksub-pair" class="ksub active">
     <div class="scrollsec">
-    <h2>Kerning Manual por Par</h2>
-    <p class="muted" style="margin:.2em 0 1em">
-      Paso <b id="kmStep">1/3 — Izquierda</b>. Flechas navegan · Shift extiende · Ctrl+Enter toggle · <b>Enter avanza</b> · <b>Esc vuelve</b>.
-    </p>
-    <div class="row" style="align-items:flex-start;gap:1em">
-      <div style="width:520px;max-width:100%">
-        <svg id="pairSvg" class="preview" viewBox="-200 -200 2600 1400" style="width:100%;height:280px"></svg>
-        <p class="muted" id="kernMode" style="font-size:.8em;margin:.3em 0"></p>
+    <div class="row kernfila">
+      <div class="viscol">
+        <svg id="pairSvg" class="preview" viewBox="-200 -200 2600 1400" style="width:100%;height:300px"></svg>
+        <p class="muted" id="kernMode" style="font-size:.82em;margin:.5em 0 0"></p>
       </div>
-      <div class="panel ctl" style="width:280px">
-        <div class="row" style="gap:.4em;align-items:center;margin-bottom:.4em;font-size:.9em">
-          <span>Izq.</span>
-          <button class="lockbtn" id="lockL" title="Fijar izquierda (clic o Bloq Mayús)">🔓</button>
-          <span style="margin-left:auto">Der.</span>
-          <button class="lockbtn" id="lockR" title="Fijar derecha (clic o Bloq Mayús)">🔓</button>
+      <div class="panel ctl">
+        <p class="paso">Paso <b id="kmStep">1/3 — Izquierda</b></p>
+        <div class="bloque">
+          <h4 class="titulo-bloque">Qué letra se está ajustando</h4>
+          <div class="row" style="gap:.5em;align-items:center;font-size:.9em">
+            <span>Izq.</span>
+            <button class="lockbtn" id="lockL" title="Fijar izquierda">🔓</button>
+            <span style="margin-left:auto">Der.</span>
+            <button class="lockbtn" id="lockR" title="Fijar derecha">🔓</button>
+          </div>
         </div>
-        <div class="slider"><div class="head"><span>Separación Final</span><b id="kvOut">0</b></div>
-          <input type="range" id="kvS" min="-600" max="600" value="0">
-          <div class="meter"><i id="kvM"></i></div></div>
-        <p class="muted" id="kvInfo" style="font-size:.9em"></p>
-        <button class="btn" id="kvSave">Guardar Excepción</button>
+        <div class="bloque">
+          <h4 class="titulo-bloque">Separación</h4>
+          <div class="slider" style="margin-bottom:.6em"><div class="head"><span>Separación final</span><b id="kvOut">0</b></div>
+            <input type="range" id="kvS" min="-600" max="600" value="0">
+            <div class="meter"><i id="kvM"></i></div></div>
+          <p class="muted" id="kvInfo" style="font-size:.88em;margin:0 0 .9em"></p>
+          <button class="btn" id="kvSave">Guardar excepción</button>
+        </div>
       </div>
     </div>
 
-    <h2 style="margin-top:1.5em">Lote activo</h2>
-    <div id="kernCats" class="row" style="gap:.3em;margin-bottom:.3em"></div>
-    <div class="chars batchgrid" data-side="pair" tabindex="0" style="margin-bottom:1em"></div>
+    <div class="bloque">
+      <h4 class="titulo-bloque">Lote activo</h4>
+      <div id="kernCats" class="row" style="gap:.3em;margin-bottom:.5em"></div>
+      <div class="chars batchgrid" data-side="pair" tabindex="0"></div>
+    </div>
+    </div>
+  </div>
 
-    <h2 style="margin-top:1.5em">Pares con ajuste manual guardado</h2>
-    <div class="row" style="gap:.4em;margin-bottom:.4em;align-items:center">
+  <div id="ksub-base" class="ksub">
+    <div class="scrollsec">
+    <div class="row kernfila">
+      <div class="viscol">
+        <svg id="basePrevSvg" class="preview" viewBox="-200 -200 2600 1400" style="width:100%;height:300px"></svg>
+        <div class="panel" style="display:flex;gap:.5em;align-items:center;padding:.5em .7em;margin-top:.5em">
+          <label style="font-size:.9em">Placeholder izq. <select id="basePL"></select></label>
+          <button class="btn sec" id="baseSwapPL" title="Intercambiar placeholders" style="padding:.2em .6em">⇄</button>
+          <label style="font-size:.9em">Placeholder der. <select id="basePR"></select></label>
+        </div>
+      </div>
+      <div class="panel ctl">
+        <div class="bloque">
+          <h4 class="titulo-bloque">Ajuste para todo el lote</h4>
+          <div class="campo">
+            <span>Izquierda: <b id="kbLv" style="color:var(--ok)">0</b></span>
+            <input type="range" id="kbLSlider" min="-600" max="600" value="0" style="width:100%">
+            <input type="number" id="kbL" value="0" style="width:5.5em;margin-top:.4em">
+          </div>
+          <div class="campo">
+            <span>Derecha: <b id="kbRv" style="color:var(--ok)">0</b></span>
+            <input type="range" id="kbRSlider" min="-600" max="600" value="0" style="width:100%">
+            <input type="number" id="kbR" value="0" style="width:5.5em;margin-top:.4em">
+          </div>
+          <div class="campo">
+            <span>Ambos: <b id="kbBothv" style="color:var(--ok)">—</b></span>
+            <input type="range" id="kbBothSlider" min="-600" max="600" value="0" style="width:100%">
+            <input type="number" id="kbBoth" placeholder="=" style="width:5.5em;margin-top:.4em">
+          </div>
+        </div>
+        <div class="bloque">
+          <h4 class="titulo-bloque">Lote (<span id="kbSelCount">0</span>)</h4>
+          <div id="kbSelPreview" style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold;color:var(--ok);height:2.2em;line-height:2.2em;background:#111;padding:0 .6em;border-radius:5px;border:1px solid #333;margin-bottom:.7em">Ninguna</div>
+          <button class="btn" id="kbApply" style="margin-right:.4em">Aplicar al lote</button>
+          <button class="btn sec" id="kbDelete" title="Pone izquierda y derecha en 0 para todo el lote">Restablecer a 0</button>
+        </div>
+        <div class="bloque">
+          <h4 class="titulo-bloque">Rejilla de letras</h4>
+          <div id="kernCatsBase" class="row" style="gap:.3em;margin-bottom:.5em"></div>
+          <div class="chars batchgrid" data-side="base" tabindex="0"></div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div id="ksub-pares" class="ksub">
+    <div class="scrollsec">
+    <h2>Pares con ajuste manual guardado</h2>
+    <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
       <button class="btn sec" id="kernSelAll">Todos</button>
       <button class="btn sec" id="kernSelNone">Ninguno</button>
       <button class="btn" id="kernDelSel">Eliminar seleccionados</button>
@@ -1448,56 +1721,6 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
       </tr></thead>
       <tbody id="kerntable"></tbody>
     </table>
-    </div>
-  </div>
-
-  <div id="ksub-base" class="ksub">
-    <div class="scrollsec">
-    <h2>Kerning Base por Lote</h2>
-    <p class="muted" style="margin-top:0">
-      Modifica el kerning base (izquierda/derecha) de las letras del lote.
-      Los <b>placeholders</b> son solo para previsualizar: <b>⇄</b> (o <b>Shift+Tab</b>) los intercambia sin tocar el lote.
-    </p>
-
-    <div class="panel" style="display:flex;gap:.5em;align-items:center;padding:.4em .6em;margin-bottom:.6em;max-width:560px">
-      <label style="font-size:.9em">Placeholder izq. <select id="basePL"></select></label>
-      <button class="btn sec" id="baseSwapPL" title="Intercambiar placeholders (Shift+Tab)" style="padding:.2em .6em">⇄</button>
-      <label style="font-size:.9em">Placeholder der. <select id="basePR"></select></label>
-    </div>
-
-    <svg id="basePrevSvg" class="preview" viewBox="-200 -200 2600 1400" style="width:100%;height:280px;margin-bottom:1em"></svg>
-
-    <div class="panel" style="max-width:900px">
-      <div id="kernCatsBase" class="row" style="gap:.3em;margin-bottom:.3em"></div>
-      <div class="chars batchgrid" data-side="base" tabindex="0" style="margin-bottom:1em"></div>
-
-      <div style="display:flex;gap:1.5em;flex-wrap:wrap;align-items:flex-start">
-        <div style="flex:1;min-width:250px">
-          <label style="display:block;margin-bottom:.3em;font-size:.9em">Izquierda: <b id="kbLv" style="color:var(--ok)">0</b></label>
-          <input type="range" id="kbLSlider" min="-600" max="600" value="0" style="width:100%">
-          <input type="number" id="kbL" value="0" style="width:5.5em;margin-top:.3em">
-        </div>
-        <div style="flex:1;min-width:250px">
-          <label style="display:block;margin-bottom:.3em;font-size:.9em">Derecha: <b id="kbRv" style="color:var(--ok)">0</b></label>
-          <input type="range" id="kbRSlider" min="-600" max="600" value="0" style="width:100%">
-          <input type="number" id="kbR" value="0" style="width:5.5em;margin-top:.3em">
-        </div>
-        <div style="flex:1;min-width:250px">
-          <label style="display:block;margin-bottom:.3em;font-size:.9em">Ambos: <b id="kbBothv" style="color:var(--ok)">—</b></label>
-          <input type="range" id="kbBothSlider" min="-600" max="600" value="0" style="width:100%">
-          <input type="number" id="kbBoth" placeholder="=" style="width:5.5em;margin-top:.3em">
-        </div>
-      </div>
-
-      <div class="row" style="gap:.4em;margin-top:1em">
-        <div>
-          <label style="display:block;margin-bottom:.3em;font-size:.9em">Lote (<span id="kbSelCount">0</span>)</label>
-          <div id="kbSelPreview" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold;color:var(--ok);height:2.2em;line-height:2.2em;background:#111;padding:0 .6em;border-radius:5px;border:1px solid #333">Ninguna</div>
-        </div>
-        <button class="btn" id="kbApply" style="align-self:flex-end">Aplicar a Lote</button>
-        <button class="btn sec" id="kbDelete" style="align-self:flex-end" title="Pone izquierda y derecha en 0 para todo el lote">Restablecer a 0</button>
-      </div>
-    </div>
     </div>
   </div>
 </section>
@@ -1552,14 +1775,21 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   </div>
   <div class="cuerpo">
     <h4>Versión <span id="verActual">…</span></h4>
-    <p class="muted" id="updEstado" style="margin:.2em 0 .7em">Todavía no se comprobó si hay actualizaciones.</p>
-    <p style="margin:0">
+    <p class="muted" id="updEstado" style="margin:.2em 0 .9em">Todavía no se comprobó si hay actualizaciones.</p>
+    <p style="margin:0 0 .2em">
       <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
+      <button class="btn" id="updBajar" style="display:none;margin-left:.4em">Descargar e instalar</button>
+      <button class="btn" id="updInstalar" style="display:none;margin-left:.4em">Instalar y reiniciar</button>
       <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
-         style="text-decoration:none;display:none;margin-left:.4em">Abrir la descarga</a>
+         style="text-decoration:none;display:none;margin-left:.4em">Abrir la página</a>
     </p>
-    <div id="updNotas" style="display:none;margin-top:.6em">
-      <pre id="updNotasTxt" style="max-height:140px"></pre>
+    <div id="updProgreso" style="display:none;margin-top:.9em">
+      <div class="barra"><i id="updBarraFill"></i></div>
+      <p class="muted" id="updBarraTxt" style="margin:.4em 0 0;font-size:.88em"></p>
+    </div>
+    <div id="updNotas" style="display:none;margin-top:.9em">
+      <p class="muted" style="margin:0 0 .3em">Qué cambió:</p>
+      <pre id="updNotasTxt" style="max-height:150px"></pre>
     </div>
   </div>
 </div>
@@ -1605,23 +1835,16 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <div class="panel" style="max-width:560px">
 <p><label>Familia <input type="text" id="family"></label></p>
 <p><label>Estilo <input type="text" id="style" size="10"></label></p>
-<p style="margin-bottom:.6em"><button class="btn" id="build">Reconstruir fuente</button>
-   <button class="btn sec" id="tourReset" style="margin-left:.4em">↻ Restablecer tutoriales</button></p>
-<p class="muted" id="out" style="margin-top:0"></p>
+<p style="margin-bottom:.4em"><button class="btn" id="build">Reconstruir fuente</button></p>
+<p class="muted" id="out" style="margin:0 0 .4em"></p>
 
-<div class="pestanas" id="pes-font">
-  <input type="radio" name="p-font" id="p-font-1" checked><label for="p-font-1">Conjuntos</label>
-  <input type="radio" name="p-font" id="p-font-2"><label for="p-font-2">Avanzado</label>
-  <div class="cuerpo">
-    <h4>Qué caracteres entran en la fuente</h4>
+<div class="bloque">
+  <h4 class="titulo-bloque">Qué caracteres entran en la fuente</h4>
+  <div class="tabla-chk">
     <label class="chk"><input type="checkbox" id="cs_upper"> Mayúsculas</label>
     <label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
     <label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
     <label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
-  </div>
-  <div class="cuerpo">
-    <h4>Datos del proyecto</h4>
-    <div id="proyInfo" class="muted">Cargando…</div>
   </div>
 </div>
 </div>
@@ -1953,7 +2176,7 @@ function renderCharGrid(){
   const list = q ? [...S.chars].filter(c => q.includes(c) || c.includes(q)) : [...S.chars];
   for (const c of list){
     const b = document.createElement('button'); b.textContent = c; b.dataset.c = c;
-    b.title = 'Clic: seleccionar · Mayús+clic: multiselección · Ctrl+clic: comparar · Enter: solo este · Ctrl+Enter: toggle';
+    b.title = 'Seleccionar este glifo';
     b.onclick = (e) => {
       if (e.ctrlKey || e.metaKey) addToCompare(c);
       else if (e.shiftKey){
@@ -2264,9 +2487,9 @@ function gridSet(grid){
 function updateKmStepLabel(){
   const el = $('kmStep');
   if (!el) return;
-  if (KSTATE.step === 'L') el.textContent = '1/3 — Selecciona izquierda (Enter para avanzar)';
-  else if (KSTATE.step === 'R') el.textContent = '2/3 — Selecciona derecha (Enter para avanzar · doble Enter = mismo carácter) · Esc vuelve';
-  else el.textContent = '3/3 — Ajusta separación (←→ ±1 · Shift ±10 · número directo) · Enter guarda · Esc vuelve';
+  if (KSTATE.step === 'L') el.textContent = '1/3 — Elegí la letra de la izquierda';
+  else if (KSTATE.step === 'R') el.textContent = '2/3 — Elegí la letra de la derecha';
+  else el.textContent = '3/3 — Ajustá la separación y guardá';
   updateLockUI();
 }
 
@@ -2488,60 +2711,114 @@ function ajustarAltoPestanas(){
   // rectificado queda por debajo de la pantalla y el cálculo daría de más.
   const fondo = window.innerHeight - 10;
   for (const g of document.querySelectorAll('.pestanas')){
-    const r = g.getBoundingClientRect();
-    // Cuánto ocupa la tira de pestañas. Puede pasar a dos filas si el ancho es
-    // chico, así que se mide desde la primera etiqueta hasta la última.
-    let altoTira = 30;
-    const etiquetas = g.querySelectorAll('label');
-    if (etiquetas.length){
-      let arriba = Infinity, abajo = 0;
-      for (const e of etiquetas){
-        const re = e.getBoundingClientRect();
-        arriba = Math.min(arriba, re.top);
-        abajo = Math.max(abajo, re.bottom);
-      }
-      altoTira = Math.max(24, Math.ceil(abajo - arriba)) + 16;
-    }
-    const disponible = Math.floor(fondo - r.top - altoTira - 16);
-    g.style.setProperty('--alto-cuerpo', Math.max(90, disponible) + 'px');
-    const caja = g.querySelectorAll(':scope > .cuerpo');
-    for (const c of caja) c.style.maxHeight = Math.max(90, disponible) + 'px';
-
-    // Si el grupo vive dentro de una fila con otra columna (Dimensiones), hay
-    // que acotar también la columna que lo contiene: es ella la que fija el alto
-    // de la fila. Cuidado: esa columna ES un ancestro del grupo, así que hay que
-    // subir por los padres hasta el hijo directo de la fila.
+    // Ojo: una pestaña abierta puede haber estirado la columna que la contiene.
+    // Hay que soltar los topes puestos antes y volver a medir, o cada pasada
+    // tomaría como bueno el alto ya recortado de la anterior.
     const fila = g.closest('.row');
+    let columna = null;
     if (fila){
-      // Se deja un margen: si el redondeo del navegador se pasa por un píxel,
-      // aparece la barra de scroll igual.
-      const alto = Math.max(120, Math.floor(fondo - fila.getBoundingClientRect().top - 20));
-      let columna = g;
+      columna = g;
       while (columna.parentElement && columna.parentElement !== fila) columna = columna.parentElement;
       for (const hijo of fila.children){
-        if (hijo === columna){
-          hijo.style.maxHeight = alto + 'px';
+        hijo.style.maxHeight = '';
+        hijo.style.overflow = '';
+      }
+      // La otra columna (el previsualizador) no puede pasar del alto libre: los
+      // dos tienen que entrar juntos en la ventana.
+      const altoLibre = Math.max(140, Math.floor(fondo - fila.getBoundingClientRect().top - 20));
+      for (const hijo of fila.children){
+        if (hijo === columna) continue;
+        hijo.style.maxHeight = altoLibre + 'px';
+      }
+    }
+    // Dos pasadas: primero se suelta el tope y se mide lo que el contenido pide
+    // de verdad, para saber dónde queda el grupo con su tamaño natural. Recién
+    // después se calcula cuánto se lo puede dejar crecer.
+    const cuerpos = g.querySelectorAll(':scope > .cuerpo');
+    for (const c of cuerpos) c.style.maxHeight = '';
+    let pide = 0;
+    for (const c of cuerpos) pide = Math.max(pide, c.scrollHeight);
+    const r = g.getBoundingClientRect();
+    // Cuánto ocupa la tira de pestañas: se mide desde la primera etiqueta hasta
+    // donde empieza el primer cuerpo, que va justo debajo. Medir "la última
+    // etiqueta" no sirve: cuando el cuerpo está oculto, sus rectángulos no son
+    // fiables y el cálculo sale inflado.
+    let altoTira = 30;
+    const primera = g.querySelector('label');
+    const primerCuerpo = g.querySelector(':scope > .cuerpo');
+    if (primera && primerCuerpo){
+      const arriba = primera.getBoundingClientRect().top;
+      const abajo = primerCuerpo.getBoundingClientRect().top;
+      if (abajo > arriba) altoTira = Math.ceil(abajo - arriba) + 6;
+    }
+    // Lo que hay desde el grupo hasta el pie de la ventana, sin contar la tira.
+    const libre = Math.floor(fondo - r.top - altoTira - 16);
+    // Si el contenido entra, se lo deja con su tamaño; si no, se lo recorta y la
+    // pestaña se desplaza por dentro. Nunca se agranda de más. El piso de 150 px
+    // es para que la caja siga siendo cómoda aunque la ventana sea baja: en ese
+    // caso la pestaña se desplaza un poco por dentro en vez de quedar aplastada.
+    const limite = Math.max(150, Math.min(Math.ceil(pide), libre));
+    g.style.setProperty('--alto-cuerpo', limite + 'px');
+    for (const c of cuerpos) c.style.maxHeight = limite + 'px';
+    // Si lo que hay arriba deja poco lugar, se acota la columna de controles a lo
+    // que entra: la caja se desplaza por dentro y la página no gana scroll.
+    if (fila){
+      const altoFila = Math.max(120, Math.floor(fondo - fila.getBoundingClientRect().top - 14));
+      // align-items:flex-start evita que las columnas se estiren, y a cada una se
+      // le da un ALTO (no un tope): en una caja de bloque un max-height no recorta
+      // a los hijos, que se desbordan igual.
+      fila.style.alignItems = 'flex-start';
+      // El previsualizador de Dimensiones fija su alto por CSS: si se le cambia el
+      // ancho, el SVG con viewBox escala el ancho solo y empujaría la caja de
+      // controles a otra fila. Por eso se le da alto y ancho explícitos.
+      const svg = document.getElementById('dimSvg');
+      const ctl = document.getElementById('dimCtl');
+      if (fila.id === 'dimFila' && svg && ctl){
+        const altoSvg = Math.min(330, altoFila);
+        svg.style.height = altoSvg + 'px';
+        svg.style.width = Math.round(altoSvg * 460 / 330) + 'px';
+        svg.style.maxHeight = '';
+        svg.style.overflow = '';
+        ctl.style.flex = '1 1 auto';
+        ctl.style.minWidth = '0';
+        // El alto de la caja lo fija lo que mida su contenido, con el tope de la
+        // ventana: si se lo fija de antemano queda una barra de scroll de más.
+        ctl.style.height = '';
+        ctl.style.maxHeight = altoFila + 'px';
+        ctl.style.overflow = 'auto';
+        // Se vuelve a medir: al cambiar el ancho de la caja, los deslizadores
+        // pasan a dos columnas y el alto que necesitan ya no es el de antes.
+        for (const c of cuerpos) c.style.maxHeight = '';
+        let pide2 = 0;
+        for (const c of cuerpos) pide2 = Math.max(pide2, c.scrollHeight);
+        const cuerpoAlto = Math.max(110, Math.min(Math.ceil(pide2), altoFila - altoTira - 14));
+        for (const c of cuerpos) c.style.maxHeight = cuerpoAlto + 'px';
+        // Si el contenido entra justo, se quita el desplazamiento interno: un
+        // par de píxeles de redondeo dejaban una barra que no hacía falta.
+        if (ctl.scrollHeight - ctl.clientHeight <= 3) ctl.style.overflow = 'visible';
+      } else {
+        for (const hijo of fila.children){
+          hijo.style.height = Math.max(120, altoFila - 2) + 'px';
+          hijo.style.maxHeight = Math.max(120, altoFila - 2) + 'px';
           hijo.style.overflow = 'auto';
-        } else if (!hijo.contains(g)){
-          // La otra columna: se acota para que la fila no crezca de más.
-          hijo.style.maxHeight = alto + 'px';
-          if (hijo.tagName !== 'svg') hijo.style.overflow = 'auto';
         }
+        const cuerpoAlto = Math.max(110, Math.min(Math.ceil(pide), altoFila - altoTira - 14));
+        for (const c of cuerpos) c.style.maxHeight = cuerpoAlto + 'px';
       }
     }
   }
 
-  // Último recurso: si con la ventana así de baja el contenido de arriba ya no
-  // deja lugar, la sección entera se desplaza por dentro. La página nunca.
+  // Último recurso, sólo si con la ventana muy baja el contenido de arriba ya no
+  // deja lugar: la sección se desplaza por dentro. Se mide ANTES de tocar nada,
+  // porque si no cada pasada tomaría como bueno el alto ya recortado.
   for (const sec of document.querySelectorAll('section')){
     if (!sec.classList.contains('active')){ sec.style.maxHeight = ''; sec.style.overflow = ''; continue; }
+    sec.style.maxHeight = '';
+    sec.style.overflow = '';
     const sobra = sec.scrollHeight - fondo;
     if (sobra > 2){
       sec.style.maxHeight = Math.max(200, window.innerHeight - 36) + 'px';
       sec.style.overflow = 'auto';
-    } else {
-      sec.style.maxHeight = '';
-      sec.style.overflow = '';
     }
   }
 }
@@ -2627,15 +2904,6 @@ async function loadStatus(){
   for (const k of ['upper','lower','digits','punct']) {
     if ($('cs_'+k)) $('cs_'+k).checked = s.charsets[k];
   }
-  // Pestaña "Avanzado" de Fuente: los datos que hacen falta para diagnosticar.
-  if ($('proyInfo')) {
-    const m = (s.metrics || {});
-    $('proyInfo').innerHTML =
-      'Glifos cargados: <b>' + s.glyphs + '</b><br>' +
-      'Pares con ajuste manual: <b>' + (s.kerning || []).length + '</b><br>' +
-      'UPM: <b>' + (m.upm || '—') + '</b> · línea base: <b>' + (m.baseline_px || '—') + ' px</b><br>' +
-      'Avance por defecto: <b>' + (m.default_advance || '—') + '</b>';
-  }
 
   const changed = (S.version !== s.version) || (S.chars !== s.all_chars);
   if (changed){
@@ -2664,9 +2932,9 @@ async function loadStatus(){
 const K = {mode: 'select', slot: 'R', cursor: 0, saved: 0, buf: null};
 function kernModeLabel(){
   const t = {
-    select: 'Letras · escribe una letra · ←→ lado · ⇥ intercambiar · ↓ cuadrícula · Enter kerning',
-    grid: 'Cuadrícula · flechas navegan · letra salta · Enter elige · Esc vuelve',
-    kern: 'Kerning · ←→ ±1 (Shift ±10) · escribe número · Enter guarda · ↑ cancela'
+    select: 'Elegí las dos letras del par',
+    grid: 'Elegí un glifo de la rejilla',
+    kern: 'Ajustá la separación entre las dos letras'
   };
   if ($('kernMode')) $('kernMode').textContent = t[K.mode];
 }
@@ -3233,26 +3501,110 @@ impRefresh();
 function updMostrar(info){
   if ($('verActual')) $('verActual').textContent = info.actual || '?';
   const estado = $('updEstado');
-  const descargar = $('updDescargar');
+  const bajar = $('updBajar');
+  const abrir = $('updDescargar');
   if (!estado) return;
 
   if (info.error){
     estado.textContent = info.error;
-    if (descargar) descargar.style.display = 'none';
+    if (bajar) bajar.style.display = 'none';
+    if (abrir) abrir.style.display = 'none';
     return;
   }
   if (info.disponible){
     estado.innerHTML = 'Hay una versión nueva: <b>' + info.nueva + '</b>' +
       (info.publicada ? ' (' + info.publicada + ')' : '') + '. Estás usando la ' + info.actual + '.';
-    if (descargar){ descargar.style.display = 'inline-block'; descargar.href = info.descarga; }
+    if (bajar){ bajar.style.display = 'inline-block'; bajar.disabled = false; bajar.textContent = 'Descargar e instalar'; }
+    // El enlace a GitHub queda solo como salida de emergencia.
+    if (abrir){ abrir.style.display = 'inline-block'; abrir.href = info.descarga; }
     if (info.notas && $('updNotas') && $('updNotasTxt')){
       $('updNotasTxt').textContent = info.notas;
       $('updNotas').style.display = 'block';
     }
   } else {
     estado.textContent = 'Estás al día (versión ' + info.actual + ').';
-    if (descargar) descargar.style.display = 'none';
+    if (bajar) bajar.style.display = 'none';
+    if (abrir) abrir.style.display = 'none';
     if ($('updNotas')) $('updNotas').style.display = 'none';
+  }
+}
+
+/* ---------- Descarga con barra de progreso e instalación ---------- */
+let UPD_TIMER = null;
+
+function updBarra(porcentaje, texto){
+  const caja = $('updProgreso');
+  if (!caja) return;
+  caja.style.display = 'block';
+  if ($('updBarraFill')) $('updBarraFill').style.width = Math.max(0, Math.min(100, porcentaje)) + '%';
+  if ($('updBarraTxt')) $('updBarraTxt').textContent = texto;
+}
+
+function updBarraOcultar(){
+  const caja = $('updProgreso');
+  if (caja) caja.style.display = 'none';
+}
+
+async function updVigilar(){
+  if (UPD_TIMER) return;
+  UPD_TIMER = setInterval(async () => {
+    let e;
+    try { e = await api('/api/update/progress'); } catch (err){ return; }
+    if (!e || e.estado === 'quieto') return;
+    if (e.estado === 'descargando'){
+      const mb = (e.bytes / 1048576).toFixed(1);
+      const tot = e.total ? (e.total / 1048576).toFixed(1) + ' MB' : '?';
+      updBarra(e.porcentaje, 'Descargando… ' + mb + ' de ' + tot + ' (' + e.porcentaje + '%)');
+    } else if (e.estado === 'listo'){
+      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      updBarra(100, 'Descarga lista.');
+      if ($('updInstalar')) $('updInstalar').style.display = 'inline-block';
+      if ($('updBajar')) $('updBajar').style.display = 'none';
+      if ($('updEstado')) $('updEstado').textContent = 'Versión ' + (e.version || '') + ' descargada. Ya se puede instalar.';
+    } else if (e.estado === 'instalando'){
+      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      updBarra(100, e.mensaje || 'Instalando…');
+    } else if (e.estado === 'error'){
+      clearInterval(UPD_TIMER); UPD_TIMER = null;
+      updBarra(0, e.error || 'No se pudo descargar.');
+      if ($('updBajar')){ $('updBajar').disabled = false; $('updBajar').textContent = 'Reintentar'; }
+    }
+  }, 400);
+}
+
+async function updBajar(){
+  const btn = $('updBajar');
+  if (btn){ btn.disabled = true; btn.textContent = 'Descargando…'; }
+  updBarra(0, 'Empezando la descarga…');
+  try {
+    const r = await api('/api/update/download', {});
+    if (r && r.error){
+      updBarra(0, r.error);
+      if (btn){ btn.disabled = false; btn.textContent = 'Descargar e instalar'; }
+      return;
+    }
+    updVigilar();
+  } catch (e){
+    updBarra(0, 'No se pudo empezar la descarga.');
+    if (btn){ btn.disabled = false; btn.textContent = 'Descargar e instalar'; }
+  }
+}
+
+async function updInstalar(){
+  const btn = $('updInstalar');
+  if (btn){ btn.disabled = true; btn.textContent = 'Instalando…'; }
+  updBarra(100, 'Instalando y reiniciando…');
+  try {
+    const r = await api('/api/update/apply', {});
+    if (r && r.error){
+      updBarra(0, r.error);
+      if (btn){ btn.disabled = false; btn.textContent = 'Instalar y reiniciar'; }
+      return;
+    }
+    updBarra(100, (r && r.mensaje) || 'Actualizado. Reiniciando…');
+  } catch (e){
+    // Es normal: la app se está cerrando para reiniciarse.
+    updBarra(100, 'Reiniciando…');
   }
 }
 
@@ -3277,8 +3629,7 @@ function updAviso(info){
   if (localStorage.getItem('fontiador_upd_oculto') === String(info.nueva)) return;  // ya lo ocultó
   if ($('updBannerTxt')){
     $('updBannerTxt').innerHTML = 'Hay una versión nueva de Fontiador: <b>' + info.nueva +
-      '</b> (tenés la ' + info.actual + '). ' +
-      '<a href="' + info.descarga + '" target="_blank" rel="noopener">Ver la descarga</a>';
+      '</b> (tenés la ' + info.actual + '). Se puede bajar desde <b>Inicio → Versión</b>.';
   }
   b.classList.add('on');
   if ($('updBannerClose')) $('updBannerClose').onclick = () => {
@@ -3290,11 +3641,19 @@ function updAviso(info){
 (function updInit(){
   const btn = $('updBuscar');
   if (btn) btn.onclick = () => updBuscar(true);
+  if ($('updBajar')) $('updBajar').onclick = updBajar;
+  if ($('updInstalar')) $('updInstalar').onclick = updInstalar;
   /* Comprobación silenciosa al abrir: si no hay internet, no molesta a nadie. */
   setTimeout(async () => {
     try {
       const info = await api('/api/update/check');
       if (info && !info.__err){ updMostrar(info); updAviso(info); }
+      // Si ya había una descarga en curso o terminada, se retoma la barra.
+      const e = await api('/api/update/progress');
+      if (e && e.estado !== 'quieto'){
+        if (e.estado === 'listo'){ updBarra(100, 'Descarga lista.'); if ($('updInstalar')) $('updInstalar').style.display = 'inline-block'; }
+        else { updVigilar(); }
+      }
     } catch (e) {}
   }, 2500);
 })();
@@ -4050,6 +4409,12 @@ class Handler(BaseHTTPRequestHandler):
                 log("Hay una versión nueva disponible: %s (tenés la %s)."
                     % (info.get("nueva"), APP_VERSION))
             self._send(200, json.dumps(info, ensure_ascii=False))
+        elif self.path == "/api/update/download":
+            self._send(200, json.dumps(update_descargar(), ensure_ascii=False))
+        elif self.path == "/api/update/progress":
+            self._send(200, json.dumps(update_estado(), ensure_ascii=False))
+        elif self.path == "/api/update/apply":
+            self._send(200, json.dumps(update_aplicar(), ensure_ascii=False))
         elif self.path == "/api/import/status":
             with _lock:
                 project = _state["project"]

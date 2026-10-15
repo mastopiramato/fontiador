@@ -24,14 +24,7 @@
       {
         "target": "#impAccesos",
         "title": "Ir a cada sección",
-        "body": "Estos accesos llevan a las demás secciones. También podés usar las **flechas** del teclado, o **Ctrl + ←** y **Ctrl + →** para cambiar de sección desde cualquier lado.",
-        "keys": [
-          "←",
-          "→",
-          "Ctrl",
-          "+",
-          "flecha"
-        ]
+        "body": "Estos accesos llevan a las demás secciones. Cada una tiene sus propias pestañas con las opciones que no se usan todo el tiempo."
       },
       {
         "target": "#impZona",
@@ -58,40 +51,28 @@
       },
       {
         "target": "#dimChars",
-        "title": "Tres formas de hacer clic",
-        "body": "1. **clic** — selecciona uno solo\n2. **Shift + clic** — suma caracteres a la selección (se pintan en verde)\n3. **Ctrl + clic** — los compara en color, sin editar",
+        "title": "Elegir varios a la vez",
+        "body": "Con **clic** elegís un solo glifo. Si sumás más a la selección, se pintan en verde y los cambios se aplican a todos juntos.",
         "keys": [
-          "clic",
-          "Shift",
-          "+",
-          "clic",
-          "Ctrl",
-          "+",
           "clic"
         ]
       },
       {
         "target": "#tab-dim",
-        "title": "Moverse sin el mouse",
-        "body": "Las flechas recorren la rejilla. Con **Shift** extendés la selección. **Esc** limpia todo y volvés a empezar.",
+        "title": "Revisar el dibujo",
+        "body": "El previsualizador muestra el glifo elegido con su cuadrícula y su línea base. Al lado están los ajustes de tamaño, posición y trazado.",
         "keys": [
-          "←",
-          "→",
-          "↑",
-          "↓",
-          "Shift",
-          "+",
-          "flecha",
-          "Esc"
+          "🔒 candado"
         ],
         "cursor": true
       },
       {
-        "target": "#tab-dim .panel.ctl",
+        "target": "#dimCtl",
         "title": "Altura, ancho y proporción",
         "body": "El candado **🔒** mantiene la proporción: al mover un valor el otro se acomoda solo. Con el candado abierto cambiás ancho y alto por separado. **Proporción original** y **Sin rotación** deshacen los cambios.",
         "keys": [
-          "🔒 candado"
+          "Avance",
+          "Trazado"
         ],
         "demo": "scale",
         "viewBox": "-300 0 2000 1000",
@@ -100,13 +81,7 @@
       {
         "target": "#tab-dim",
         "title": "Avance y trazado",
-        "body": "El **avance** es el ancho que ocupa el carácter. Abajo están los controles de trazado (umbral, desenfoque, suavizado): afectan a los renders venideros. **Re-trazar** vuelve a procesar el último render y **Diagnóstico** guarda la máscara en output/debug.",
-        "keys": [
-          "Enter",
-          "avanza",
-          "Esc",
-          "vuelve"
-        ]
+        "body": "El **avance** es el ancho que ocupa el carácter. Abajo están los controles de trazado (umbral, desenfoque, suavizado): afectan a los renders venideros. **Re-trazar** vuelve a procesar el último render y **Diagnóstico** guarda la máscara en output/debug."
       }
     ]
   },
@@ -115,16 +90,16 @@
     "steps": [
       {
         "target": ".ksubtab",
-        "title": "Dos herramientas distintas",
-        "body": "**Manual por par** corrige un par concreto (AV, To, Yo…) y **Base por lote** aplica la misma regla a muchos caracteres de una vez.",
+        "title": "Tres solapas",
+        "body": "**Kerning manual** corrige un par concreto (AV, To, Yo…) y **Kerning base** aplica la misma regla a muchos caracteres de una vez. En **Pares guardados** están todos los ajustes hechos, para revisarlos o borrarlos.",
         "keys": [
-          "Manual por par",
-          "/",
-          "Base por lote"
+          "Kerning manual",
+          "Kerning base",
+          "Pares guardados"
         ]
       },
       {
-        "target": "#kbL",
+        "target": "#lockL",
         "title": "Paso 1 y 2: izquierda y derecha",
         "body": "Se elige el carácter de la izquierda, después el de la derecha. El candado **🔒** fija un lado para repetir el otro muchas veces seguidas.",
         "keys": [
@@ -132,46 +107,34 @@
         ],
         "demo": "pair",
         "viewBox": "-100 250 1400 700",
-        "loop": true
+        "loop": true,
+        "sub": "pair"
       },
       {
         "target": "#kvS",
         "title": "Paso 3: el valor",
         "body": "El valor final es **base + ajuste manual**. La base sale del render; lo que movés acá se guarda aparte, así podés re-trazar sin perder tus ajustes. **Guardar Excepción** lo fija.",
-        "keys": [
-          "Enter",
-          "avanza",
-          "Esc",
-          "vuelve",
-          "Ctrl+Enter",
-          "toggle"
-        ],
         "demo": "kern",
         "viewBox": "-100 250 1400 700",
-        "loop": true
+        "loop": true,
+        "sub": "pair"
       },
       {
-        "target": "#ksub-pair .chars.batchgrid",
-        "title": "Teclado del asistente",
-        "body": "Las flechas recorren, **Shift** extiende el rango, **Enter** avanza de paso y **Esc** retrocede. Se puede hacer un kerning entero sin tocar el mouse.",
-        "keys": [
-          "←",
-          "→",
-          "Shift",
-          "Enter",
-          "Esc"
-        ],
+        "target": "#ksub-pair .kernfila",
+        "title": "Sin soltar el mouse",
+        "body": "El asistente pide primero la letra de la izquierda, después la de la derecha y al final el valor. El candado **🔒** deja fijo un lado para repetir el otro muchas veces.",
         "cursor": true
       },
       {
-        "target": "#kbApply",
-        "title": "Base por lote",
-        "body": "Acá definís el espacio que aporta cada carácter por su lado izquierdo (**l**) y derecho (**r**). El servidor combina los dos lados de cada par automáticamente. **⇄** intercambia los placeholders y **Restablecer a 0** limpia el lote.",
+        "target": "#ksub-base .kernfila",
+        "title": "Kerning base",
+        "body": "Acá definís el espacio que aporta cada carácter por su lado izquierdo (**l**) y derecho (**r**). El servidor combina los dos lados de cada par automáticamente.",
         "keys": [
           "⇄",
-          "Aplicar a Lote",
+          "Aplicar al lote",
           "Restablecer a 0"
-        ]
+        ],
+        "sub": "base"
       }
     ]
   },
@@ -184,7 +147,6 @@
         "body": "El template no trae vocales acentuadas: el servidor arma **Á É Í Ó Ú á é í ó ú Ñ ñ** unindo cada vocal con su marca.",
         "keys": [
           "vocal",
-          "+",
           "´"
         ]
       },
@@ -222,7 +184,7 @@
     "title": "Fuente",
     "steps": [
       {
-        "target": "#pes-font",
+        "target": "#cs_upper",
         "title": "Qué entra en la fuente",
         "body": "Solo se construyen los grupos activos. Destildá **Puntuación** si tu fuente es solo para titulares: la fuente sale más liviana y sin glifos de relleno.",
         "keys": [
