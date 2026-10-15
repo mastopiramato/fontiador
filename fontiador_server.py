@@ -410,6 +410,25 @@ def check_update():
     return resultado
 
 
+def load_tutorial():
+    """Lee el texto de los tutoriales desde tutorial.json.
+
+    Los textos viven en ese archivo, y no en el código, justamente para poder
+    corregirlos sin tocar nada más. Si falta o está mal escrito, la app arranca
+    igual: simplemente no muestra tutoriales.
+    """
+    for ruta in (os.path.join(BASE_DIR, "tutorial.json"),
+                 os.path.join(fontiador_paths.TEMPLATES_DIR, "tutorial.json")):
+        try:
+            with open(ruta, "r", encoding="utf-8-sig") as f:
+                datos = json.load(f)
+            if isinstance(datos, dict) and datos:
+                return datos
+        except (OSError, json.JSONDecodeError):
+            continue
+    return {}
+
+
 def log(msg):
     line = time.strftime("%H:%M:%S ") + msg
     try:
@@ -1226,6 +1245,20 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 .tourHelp:hover{color:var(--text);border-color:var(--ok);background:#34402a}
 #updBanner{display:none;background:#2a3a22;border-bottom:1px solid var(--ok);padding:.5em 1em;font-size:.9em;align-items:center;gap:.8em}
 #updBanner.on{display:flex}
+/* ---------- Pantalla de inicio ---------- */
+.hero{background:linear-gradient(135deg,#22301c 0%,var(--panel) 60%);border:1px solid #3d5a2d;border-radius:14px;padding:1.5em;margin-bottom:1.2em}
+.hero h2{font-size:1.45em;margin:0 0 .35em}
+.hero p{color:#cfcfcf;margin:0 0 1em;max-width:60ch}
+.hero .acciones{display:flex;gap:.6em;flex-wrap:wrap}
+#impZona{border:2px dashed #4d6b3a;border-radius:12px;padding:1.4em;text-align:center;cursor:pointer;transition:background .15s,border-color .15s}
+#impZona:hover,#impZona:focus{background:#26301f;border-color:var(--ok);outline:none}
+#impZona .grande{font-size:1.1em;font-weight:700;color:var(--text);display:block;margin-bottom:.25em}
+#impZona .chico{color:var(--muted);font-size:.9em}
+.accesos{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.7em}
+.acceso{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.85em 1em;cursor:pointer;text-align:left;color:var(--text);font-size:.95em}
+.acceso:hover,.acceso:focus{border-color:var(--ok);background:#2c3427;outline:none}
+.acceso b{display:block;margin-bottom:.15em}
+.acceso span{color:var(--muted);font-size:.86em;line-height:1.35}
 #updBanner a{color:var(--ok)}
 #updBanner button{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:.2em .6em;cursor:pointer}
 #tourCursor{position:fixed;z-index:399;display:none;border:2px solid var(--accent);border-radius:7px;pointer-events:none;transition:all .22s ease;box-shadow:0 0 0 3px rgba(240,111,192,.22)}
@@ -1244,7 +1277,7 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 </div>
 <nav>
 <h1>Fontiador</h1>
-<button data-tab="imp" class="active">Importaciones</button>
+<button data-tab="imp" class="active">Inicio</button>
 <button data-tab="dim">Dimensiones</button>
 <button data-tab="kern">Kerning</button>
 <button data-tab="words">Palabras</button>
@@ -1419,42 +1452,37 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
 </section>
 
 <section id="tab-imp" class="active">
-<h2>Importaciones <span class="muted" id="impModo" style="font-size:.75em;font-weight:400"></span></h2>
+<h2>Inicio <span class="muted" id="impModo" style="font-size:.75em;font-weight:400"></span></h2>
 
-<div class="panel" style="margin-bottom:1em">
-  <p style="margin-top:0"><b>Empezá acá: traé tu rejilla de glifos</b></p>
-  <p class="muted" style="margin-top:0">
-    Fontiador arma una fuente OpenType a partir de la rejilla de caracteres que dibujás en tu
-    programa de diseño. El recorrido completo es:
-    <b>1)</b> descargá la plantilla base, <b>2)</b> dibujá los glifos encima,
-    <b>3)</b> exportá el render, <b>4)</b> importalo acá y <b>5)</b> reconstruí la fuente.
-  </p>
-  <p style="margin-bottom:.6em">
-    <button class="btn" id="impPick">Elegir archivo…</button>
-    <button class="btn sec" id="impRefresh">↻ Actualizar</button>
+<div class="hero">
+  <h2>Traé tu rejilla de glifos</h2>
+  <p>Elegí el archivo que exportaste de tu programa de diseño. Fontiador lo traza,
+     arma los glifos y reconstruye la fuente.</p>
+  <div id="impZona" tabindex="0" role="button" aria-label="Elegir archivo para importar">
+    <span class="grande">Elegir archivo…</span>
+    <span class="chico">PNG, JPG, SVG o la exportación JSON de glifos · se pueden elegir varios</span>
+  </div>
+  <div class="acciones" style="margin-top:.9em">
     <button class="btn sec" id="impRescan">Re-escanear inbox</button>
-  </p>
-  <p class="muted" id="impPickHint"></p>
+    <button class="btn sec" id="impRefresh">↻ Actualizar</button>
+    <button class="btn sec" id="impTutorial">Ver el tutorial</button>
+  </div>
+  <p class="muted" id="impPickHint" style="margin:.8em 0 0"></p>
   <div id="impResultado"></div>
 </div>
 
-<div class="panel" style="margin-bottom:1em">
-  <p style="margin-top:0"><b>¿Primera vez? Probá con una fuente ya hecha</b></p>
-  <p class="muted" style="margin-top:0">
-    Si todavía no dibujaste nada, bajá <b>Fontiador Demo</b>: una sans serif geométrica
-    original que viene con la app, con los 103 caracteres del template y las tildes ya
-    compuestas. Sirve para ver cómo funciona una fuente terminada y para probar la app
-    sin dibujar un solo glifo.
-  </p>
-  <p style="margin-bottom:.6em">
-    <a class="btn sec" href="/api/demo/font" download="FontiadorDemo-Regular.otf"
-       style="text-decoration:none;display:inline-block">Descargar Fontiador Demo (.otf)</a>
-    <button class="btn sec" id="impDemoAyuda" style="margin-left:.4em">¿Cómo la instalo?</button>
-  </p>
-  <div id="impDemoInfo"></div>
+<p class="muted" style="margin:.2em 0 .6em">Ir a una sección</p>
+<div class="accesos" id="impAccesos">
+  <button class="acceso" data-ir="dim"><b>Dimensiones</b><span>Altura, ancho, posición y trazado de cada glifo</span></button>
+  <button class="acceso" data-ir="kern"><b>Kerning</b><span>El espacio entre pares de letras</span></button>
+  <button class="acceso" data-ir="words"><b>Palabras</b><span>Probá texto real con la fuente</span></button>
+  <button class="acceso" data-ir="accent"><b>Tildes</b><span>Ajustá las vocales acentuadas</span></button>
+  <button class="acceso" data-ir="sets"><b>Conjuntos</b><span>Qué caracteres entran en la fuente</span></button>
+  <button class="acceso" data-ir="font"><b>Fuente</b><span>Nombre, estilo, construir y actualizaciones</span></button>
+  <button class="acceso" data-ir="log"><b>Registro</b><span>Qué pasó y qué falló</span></button>
 </div>
 
-<div class="panel" style="margin-bottom:1em">
+<div class="panel" style="margin-top:1.2em">
   <p style="margin-top:0"><b>Formato que espera la app</b></p>
   <div id="impFormato" class="muted">Cargando…</div>
   <p style="margin-bottom:.4em;margin-top:.8em">
@@ -1469,11 +1497,6 @@ label.chk{display:flex;gap:.5em;align-items:center;margin:.3em 0}
     <summary style="cursor:pointer">Ver la correspondencia de cada celda</summary>
     <div id="impOrden" style="max-height:320px;overflow:auto;margin-top:.6em"></div>
   </details>
-</div>
-
-<div class="panel" style="margin-bottom:1em">
-  <p style="margin-top:0"><b>Cómo exportar desde cada programa</b></p>
-  <div id="impGuia" class="muted">Cargando…</div>
 </div>
 
 <div class="panel">
@@ -2799,7 +2822,7 @@ document.querySelectorAll('nav button[data-tab]').forEach(btn => btn.onclick = (
   if (btn.dataset.tab === 'kern'){ ensureKerningData(); drawPair(); drawBasePrev(); }
   if (btn.dataset.tab === 'dim'){ drawDim(); }
   if (btn.dataset.tab === 'words') renderWord();
-  if (btn.dataset.tab === 'imp' && typeof impRefresh === 'function'){ impRefresh(); impCargarGuia(); }
+  if (btn.dataset.tab === 'imp'){ impRefresh(); }
 });
 
 if ($('reloadBtn')) $('reloadBtn').onclick = async () => {
@@ -2895,8 +2918,10 @@ function impMsg(html, tipo){
 
 async function impImportar(rutas){
   if (!rutas || !rutas.length){ impMsg('No se eligió ningún archivo.', 'muted'); return; }
-  const btn = $('impPick');
-  if (btn){ btn.disabled = true; btn.textContent = 'Importando…'; }
+  const zona = $('impZona');
+  const rotulo = zona ? zona.querySelector('.grande') : null;
+  if (zona) zona.style.opacity = '.6';
+  if (rotulo) rotulo.textContent = 'Importando…';
   impMsg('Importando ' + rutas.length + ' archivo(s). El trazado puede tardar…', 'muted');
   try {
     const r = await api('/api/import/files', {rutas: rutas});
@@ -2917,15 +2942,17 @@ async function impImportar(rutas){
   } catch (e){
     impMsg('Error inesperado: ' + e.message, 'error');
   } finally {
-    if (btn){ btn.disabled = false; btn.textContent = 'Elegir archivo…'; }
+    if (zona) zona.style.opacity = '';
+    if (rotulo) rotulo.textContent = 'Elegir archivo…';
     impRefresh();
     loadStatus();
   }
 }
 
 async function impElegir(){
-  const btn = $('impPick');
-  if (btn){ btn.disabled = true; btn.textContent = 'Esperando el diálogo…'; }
+  const zona = $('impZona');
+  const rotulo = zona ? zona.querySelector('.grande') : null;
+  if (rotulo) rotulo.textContent = 'Esperando el diálogo…';
   try {
     const r = await api('/api/import/dialog', {});
     if (r && r.error){ impMsg('No se pudo abrir el diálogo: ' + r.error, 'error'); return; }
@@ -2935,7 +2962,7 @@ async function impElegir(){
   } catch (e){
     impMsg('Error abriendo el diálogo: ' + e.message, 'error');
   } finally {
-    if (btn){ btn.disabled = false; btn.textContent = 'Elegir archivo…'; }
+    if (rotulo) rotulo.textContent = 'Elegir archivo…';
   }
 }
 
@@ -2986,25 +3013,6 @@ function impCarpetasHTML(carpetas){
   return html;
 }
 
-function impGuiaHTML(programas){
-  if (!programas || !programas.length) return '<p class="muted">No hay guía disponible.</p>';
-  let html = '';
-  for (const p of programas){
-    html += '<details style="margin-bottom:.6em"><summary style="cursor:pointer">' +
-      '<b>' + p.nombre + '</b> <span class="muted">— ' + p.mecanismo + '</span></summary>' +
-      '<ol style="margin:.5em 0 .3em 1.2em;line-height:1.5">';
-    for (const paso of p.pasos) html += '<li>' + paso + '</li>';
-    html += '</ol>';
-    if (p.nota) html += '<p class="muted" style="margin:.2em 0 0">' + p.nota + '</p>';
-    if (p.formatos && p.formatos.length){
-      html += '<p class="muted" style="margin:.3em 0 0">Formatos: <code>' +
-        p.formatos.join('</code>, <code>') + '</code></p>';
-    }
-    html += '</details>';
-  }
-  return html;
-}
-
 async function impRefresh(){
   try {
     const r = await api('/api/import/status');
@@ -3021,19 +3029,16 @@ async function impRefresh(){
   } catch (e) { /* silencioso: no romper la interfaz por un fallo de red */ }
 }
 
-async function impCargarGuia(){
-  if ($('impGuia') && $('impGuia').dataset.cargada === '1') return;
-  try {
-    const r = await api('/api/import/guide');
-    if (r && r.programas){
-      $('impGuia').innerHTML = impGuiaHTML(r.programas);
-      $('impGuia').dataset.cargada = '1';
-    }
-  } catch (e) {}
-}
 
-if ($('impPick')) $('impPick').onclick = impElegir;
-if ($('impRefresh')) $('impRefresh').onclick = () => { impRefresh(); impCargarGuia(); };
+if ($('impZona')){
+  $('impZona').onclick = impElegir;
+  $('impZona').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); impElegir(); } };
+}
+if ($('impRefresh')) $('impRefresh').onclick = impRefresh;
+if ($('impTutorial')) $('impTutorial').onclick = () => tourReplay();
+document.querySelectorAll('#impAccesos .acceso').forEach(b => {
+  b.onclick = () => { const t = b.dataset.ir; const nav = document.querySelector('nav button[data-tab="' + t + '"]'); if (nav) nav.click(); };
+});
 if ($('impRescan')) $('impRescan').onclick = async () => {
   const b = $('impRescan'); b.disabled = true; b.textContent = 'Escaneando…';
   try {
@@ -3053,33 +3058,7 @@ for (const [id, donde] of [['impClearErr','errores'], ['impClearProc','procesado
 
 /* Importaciones es la pantalla de inicio, así que se carga sola al abrir. */
 impRefresh();
-impCargarGuia();
 
-/* Instrucciones para instalar la fuente de demostración, según el sistema. */
-if ($('impDemoAyuda')) $('impDemoAyuda').onclick = () => {
-  const plat = (navigator.userAgentData && navigator.userAgentData.platform) ||
-               navigator.platform || '';
-  let pasos;
-  if (/win/i.test(plat)){
-    pasos = ['Descargá el archivo .otf.',
-             'Hacé clic derecho sobre él y elegí <b>Instalar</b> (o <b>Instalar para todos los usuarios</b>).',
-             'Si no aparece esa opción: seleccionalo, <b>Ctrl+C</b>, y pegalo en <code>C:\\Windows\\Fonts</code>.',
-             'Abrilo después en Word, LibreOffice o cualquier programa de texto para verlo.'];
-  } else if (/mac/i.test(plat)){
-    pasos = ['Descargá el archivo .otf.',
-             'Hacé doble clic: se abre <b>Catálogo Tipográfico</b>.',
-             'Pulsá <b>Instalar</b>. Queda disponible para todas tus aplicaciones.'];
-  } else {
-    pasos = ['Descargá el archivo .otf.',
-             'Copialo a <code>~/.local/share/fonts/</code> (creá la carpeta si no existe).',
-             'Ejecutá <code>fc-cache -f -v</code> para que el sistema lo detecte. O abrilo con el visor de fuentes de tu escritorio.'];
-  }
-  $('impDemoInfo').innerHTML =
-    '<ol style="margin:.4em 0 .2em 1.2em;line-height:1.55">' +
-    pasos.map(p => '<li>' + p + '</li>').join('') + '</ol>' +
-    '<p class="muted" style="margin:.3em 0 0">Es una fuente completa y original, ' +
-    'no una copia de Arial ni de ninguna otra tipografía con licencia.</p>';
-};
 </script>
 <script>
 /* =====================================================================
@@ -3181,124 +3160,43 @@ function updAviso(info){
      cursor : (opcional) mueve el recuadro rosa por la rejilla de caracteres
    ===================================================================== */
 
-const TOURS = {
-  dim: { title: 'Dimensiones', steps: [
-    { target: '#dimChars', title: 'Elegí un carácter',
-      body: 'Cada botón es un glifo. La rejilla es la puerta de entrada a todo lo demás.',
-      keys: ['clic'] },
-    { target: '#dimChars', title: 'Tres formas de hacer clic',
-      body: '<ol><li><b>clic</b> — selecciona uno solo</li>' +
-            '<li><b>Shift + clic</b> — suma caracteres a la selección (se pintan en verde)</li>' +
-            '<li><b>Ctrl + clic</b> — los compara en color, sin editar</li></ol>',
-      keys: ['clic', 'Shift', '+', 'clic', 'Ctrl', '+', 'clic'] },
-    { target: '#tab-dim', title: 'Moverse sin el mouse',
-      body: 'Las flechas recorren la rejilla. Con <b>Shift</b> extendés la selección. ' +
-            '<b>Esc</b> limpia todo y volvés a empezar.',
-      keys: ['←', '→', '↑', '↓', 'Shift', '+', 'flecha', 'Esc'], cursor: true },
-    { target: '#tab-dim .panel.ctl', title: 'Altura, ancho y proporción',
-      body: 'El candado <b>🔒</b> mantiene la proporción: al mover un valor el otro se acomoda solo. ' +
-            'Con el candado abierto cambiás ancho y alto por separado. ' +
-            '<b>Proporción original</b> y <b>Sin rotación</b> deshacen los cambios.',
-      keys: ['🔒 candado'], demo: 'scale', viewBox: '-300 0 2000 1000', loop: true },
-    { target: '#tab-dim', title: 'Avance y trazado',
-      body: 'El <b>avance</b> es el ancho que ocupa el carácter. Abajo están los controles de trazado ' +
-            '(umbral, desenfoque, suavizado): afectan a los renders venideros. ' +
-            '<b>Re-trazar</b> vuelve a procesar el último render y <b>Diagnóstico</b> guarda la máscara en output/debug.',
-      keys: ['Enter', 'avanza', 'Esc', 'vuelve'] }
-  ]},
+/* Los textos de los tutoriales NO viven acá: se leen de tutorial.json a través
+   de /api/tutorial, así se pueden corregir sin tocar el código. El formato es
+   sencillo: **negrita**, `código`, listas con "1." o "- ", y saltos de línea. */
+let TOURS = {};
+let TOURS_LISTOS = false;
 
-  kern: { title: 'Kerning', steps: [
-    { target: '.ksubtab', title: 'Dos herramientas distintas',
-      body: '<b>Manual por par</b> corrige un par concreto (AV, To, Yo…) y <b>Base por lote</b> ' +
-            'aplica la misma regla a muchos caracteres de una vez.',
-      keys: ['Manual por par', '/', 'Base por lote'] },
-    { target: '#kbL', title: 'Paso 1 y 2: izquierda y derecha',
-      body: 'Se elige el carácter de la izquierda, después el de la derecha. ' +
-            'El candado <b>🔒</b> fija un lado para repetir el otro muchas veces seguidas.',
-      keys: ['🔒'], demo: 'pair', viewBox: '-100 250 1400 700', loop: true },
-    { target: '#kvS', title: 'Paso 3: el valor',
-      body: 'El valor final es <b>base + ajuste manual</b>. La base sale del render; ' +
-            'lo que movés acá se guarda aparte, así podés re-trazar sin perder tus ajustes. ' +
-            '<b>Guardar Excepción</b> lo fija.',
-      keys: ['Enter', 'avanza', 'Esc', 'vuelve', 'Ctrl+Enter', 'toggle'], demo: 'kern', viewBox: '-100 250 1400 700', loop: true },
-    { target: '#ksub-pair .chars.batchgrid', title: 'Teclado del asistente',
-      body: 'Las flechas recorren, <b>Shift</b> extiende el rango, <b>Enter</b> avanza de paso y ' +
-            '<b>Esc</b> retrocede. Se puede hacer un kerning entero sin tocar el mouse.',
-      keys: ['←', '→', 'Shift', 'Enter', 'Esc'], cursor: true },
-    { target: '#kbApply', title: 'Base por lote',
-      body: 'Acá definís el espacio que aporta cada carácter por su lado izquierdo (<b>l</b>) y ' +
-            'derecho (<b>r</b>). El servidor combina los dos lados de cada par automáticamente. ' +
-            '<b>⇄</b> intercambia los placeholders y <b>Restablecer a 0</b> limpia el lote.',
-      keys: ['⇄', 'Aplicar a Lote', 'Restablecer a 0'] }
-  ]},
+function tourTexto(s){
+  if (!s) return '';
+  const esc = x => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const bloques = [];
+  let html = esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  const lineas = html.split('\n');
+  let lista = null;
+  const cerrar = () => { if (lista){ bloques.push('<' + lista + '>' + lista_items.join('') + '</' + lista + '>'); lista = null; } };
+  let lista_items = [];
+  for (const linea of lineas){
+    const v = linea.trim();
+    if (!v){ cerrar(); bloques.push(''); continue; }
+    const num = v.match(/^(\d+)\.\s+(.*)$/);
+    const vin = v.match(/^-\s+(.*)$/);
+    if (num){ if (lista !== 'ol'){ cerrar(); lista = 'ol'; lista_items = []; } lista_items.push('<li>' + num[2] + '</li>'); }
+    else if (vin){ if (lista !== 'ul'){ cerrar(); lista = 'ul'; lista_items = []; } lista_items.push('<li>' + vin[1] + '</li>'); }
+    else { cerrar(); bloques.push('<p>' + v + '</p>'); }
+  }
+  cerrar();
+  return bloques.filter(Boolean).join('');
+}
 
-  imp: { title: 'Importaciones', steps: [
-    { target: '#impPick', title: 'Ahora podés elegir el archivo desde acá',
-      body: 'Hasta ahora había que copiar el render a mano dentro de la carpeta <b>inbox</b>. ' +
-            'Con este botón se abre el diálogo de archivos del sistema y se importa solo: ' +
-            'se traza y la fuente se reconstruye.',
-      keys: ['Elegir archivo…'] },
-    { target: '#impFormato', title: 'El formato que hay que respetar',
-      body: 'Una rejilla de <b>10 columnas</b> con celdas de <b>1000 × 1000 px</b> y la línea base ' +
-            'a <b>800 px</b> del borde superior de cada celda. El ancho total del render tiene que ' +
-            'dar <b>10 000 px</b>.',
-      keys: ['10 columnas', 'celda 1000 px', 'base 800 px'],
-      demo: 'template', viewBox: '-40 0 1240 700' },
-    { target: '#impGuia', title: 'Cómo exportar desde tu programa',
-      body: 'Acá está el paso a paso para <b>Affinity</b>, Illustrator, Inkscape, Figma, CorelDRAW ' +
-            'y cualquier otro. Si tu programa puede volcar los contornos como <b>export_*.json</b>, ' +
-            'usá esa vía: se importan los vectores exactos, sin trazar.',
-      keys: ['Affinity', 'Illustrator', 'Inkscape', 'Figma'] },
-    { target: '#impCarpetas', title: 'Qué pasó con cada archivo',
-      body: 'Cada carpeta vigilada muestra lo que está en espera, lo que se procesó y lo que falló. ' +
-            'Si un render viene con el tamaño equivocado, el motivo aparece en el Registro y el ' +
-            'archivo se mueve a <b>errores</b> para que puedas revisarlo.',
-      keys: ['pendientes', 'procesados', 'errores'] }
-  ]},
-
-  words: { title: 'Palabras', steps: [    { target: '#wordIn', title: 'Probá texto real',
-      body: 'Escribí cualquier palabra o frase para ver cómo se comportan juntos el espaciado y el kerning. ' +
-            'Es la forma más rápida de detectar un par que quedó mal.',
-      keys: ['escribir'], demo: 'word', viewBox: '-60 300 1500 480', loop: true }
-  ]},
-
-  accent: { target: '#accS', title: 'Tildes', steps: [
-    { target: '#tab-accent', title: 'Las tildes se componen solas',
-      body: 'El template no trae vocales acentuadas: el servidor arma <b>Á É Í Ó Ú á é í ó ú Ñ ñ</b> ' +
-            'unindo cada vocal con su marca.',
-      keys: ['vocal', '+', '´'] },
-    { target: '#accS', title: 'Corregir una tilde',
-      body: 'Elegí la letra y movés <b>X</b>, <b>Y</b> o la <b>escala</b>. Empezá por una letra: ' +
-            'lo que ajustes se puede aplicar a las demás. <b>Recomponer</b> rehace todas.',
-      keys: ['Recomponer', 'Restablecer'], demo: 'accent', viewBox: '-300 0 2000 1000', loop: true }
-  ]},
-
-  sets: { title: 'Conjuntos de caracteres', steps: [
-    { target: '#cs_upper', title: 'Qué entra en la fuente',
-      body: 'Solo se construyen los grupos activos. Destildá <b>Puntuación</b> si tu fuente es solo ' +
-            'para titulares: la fuente sale más liviana y sin glifos de relleno.',
-      keys: ['mayúsculas', 'minúsculas', 'números', 'puntuación'], demo: 'sets', viewBox: '-60 0 1120 360', loop: true }
-  ]},
-
-  font: { title: 'Fuente', steps: [
-    { target: '#family', title: 'Nombre de la familia',
-      body: 'Es el nombre con el que el sistema va a reconocer la fuente. El estilo distingue ' +
-            '<b>Regular</b>, <b>Bold</b>, <b>Italic</b>…',
-      keys: ['Familia', 'Estilo'] },
-    { target: '#build', title: 'Reconstruir',
-      body: 'Genera el <b>.otf</b> con los caracteres activos, el kerning y los ajustes. ' +
-            'Se guarda en la carpeta <b>output/</b>. Si algo falla, el motivo aparece en el Registro.',
-      keys: ['Reconstruir fuente'], demo: 'build', viewBox: '-60 0 1120 360', loop: true }
-  ]},
-
-  log: { target: '#log', title: 'Registro', steps: [
-    { target: '#log', title: 'Qué pasó y qué falló',
-      body: 'Cada importación, cada re-trazado y cada fuente generada quedan acá, con la hora. ' +
-            'Si una celda del render está vacía o el render no tiene el tamaño esperado, ' +
-            'el motivo se explica en este panel.',
-      keys: ['últimas 50 líneas'] }
-  ]}
-};
+async function cargarTutorial(){
+  if (TOURS_LISTOS) return TOURS;
+  try {
+    const r = await fetch('/api/tutorial');
+    if (r.ok) TOURS = await r.json();
+  } catch (e){ /* sin tutoriales: la app funciona igual */ }
+  TOURS_LISTOS = true;
+  return TOURS;
+}
 
 const TOUR_STORE = 'fontiador_tours_v1';
 
@@ -3554,10 +3452,12 @@ function tourPlaceCard(){
   if (card._arrow) card._arrow.style.display = nearTop ? 'block' : 'none';
 }
 
-function tourRender(){
+async function tourRender(){
+  await cargarTutorial();
   const tour = TOURS[TOUR.id];
-  if (!tour) return;
+  if (!tour || !tour.steps || !tour.steps.length){ tourClose(); return; }
   const st = tour.steps[TOUR.step];
+  if (!st){ tourClose(); return; }
   const last = TOUR.step === tour.steps.length - 1;
   tourClearTimers();
   tourUndo();
@@ -3716,6 +3616,26 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
   const active = document.querySelector('nav button[data-tab].active');
   if (active) tourMaybeAuto(active.dataset.tab);
 })();
+
+/* Inicio e Importaciones son la misma pantalla. Se instala al final para pisar
+   el manejador general de pestañas. */
+(function(){
+  const irA = tab => {
+    const btn = document.querySelector('nav button[data-tab="' + tab + '"]');
+    if (!btn) return;
+    document.querySelectorAll('nav button[data-tab]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('section').forEach(sec => sec.classList.toggle('active', sec.id === 'tab-' + tab));
+    if (tab === 'dim' && typeof drawDim === 'function') drawDim();
+    if (tab === 'kern' && typeof ensureKerningData === 'function'){ ensureKerningData(); drawPair(); drawBasePrev(); }
+    if (tab === 'words' && typeof renderWord === 'function') renderWord();
+    if (tab === 'imp' && typeof impRefresh === 'function') impRefresh();
+    const caja = document.querySelector('main');
+    if (caja) caja.scrollTop = 0;
+  };
+  window.fontiadorIrA = irA;
+  const inicio = document.querySelector('nav button[data-tab="imp"]');
+  if (inicio) inicio.onclick = () => irA('imp');
+})();
 </script></body></html>
 """
 
@@ -3822,6 +3742,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, json.dumps(info, ensure_ascii=False))
             except Exception as e:
                 self._send(500, json.dumps({"error": str(e)}))
+        elif self.path == "/api/tutorial":
+            self._send(200, json.dumps(load_tutorial(), ensure_ascii=False))
         elif self.path == "/api/demo/font":
             rutas = [
                 os.path.join(fontiador_paths.TEMPLATES_DIR, "FontiadorDemo-Regular.otf"),
