@@ -29,7 +29,7 @@ import potrace
 from PIL import Image, ImageFilter
 from shapely.geometry import Polygon
 
-APP_VERSION = "0.2.3"
+APP_VERSION = "0.2.4"
 
 # Repositorio del proyecto: de acá salen las actualizaciones y los enlaces de descarga.
 REPO = "mastopiramato/fontiador"
@@ -1198,6 +1198,20 @@ h2{font-size:1.1em;margin:.2em 0 .8em}
 .row{display:flex;gap:1.4em;align-items:flex-start;flex-wrap:wrap}
 .panel{background:var(--panel);border-radius:10px;padding:1em;border:1px solid var(--line)}
 .preview{background:#0d0d0d;border-radius:10px;border:1px solid var(--line);display:block}
+/* Paneles plegables: los bloques que no hacen falta todo el tiempo arrancan
+   cerrados, así ninguna sección necesita scroll. Se abren con clic en el
+   encabezado o con Alt+Enter. */
+details.plegable{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:.7em}
+details.plegable>summary{cursor:pointer;padding:.55em .85em;font-weight:600;font-size:.94em;
+  display:flex;align-items:center;gap:.5em;list-style:none;border-radius:10px}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::before{content:"▸";color:var(--muted);font-weight:400}
+details.plegable[open]>summary::before{content:"▾"}
+details.plegable[open]>summary{border-bottom:1px solid var(--line);border-radius:10px 10px 0 0}
+details.plegable>summary:hover{color:#fff}
+details.plegable>summary .pista{margin-left:auto;font-size:.78em;color:#666;font-weight:400}
+details.plegable .cuerpo{padding:.7em .85em .85em}
+details.plegable .cuerpo .slider:last-of-type{margin-bottom:.4em}
 .ctl{width:340px;max-width:100%}
 .slider{margin-bottom:1em}
 .slider .head{display:flex;justify-content:space-between;font-size:.9em;color:var(--muted);margin-bottom:.2em}
@@ -1299,6 +1313,7 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <p id="navAyuda">
   <kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> recorren<br>
   <kbd class="tecla">Ctrl</kbd>+<kbd class="tecla">←</kbd><kbd class="tecla">→</kbd> cambian de sección<br>
+  <kbd class="tecla">Alt</kbd>+<kbd class="tecla">↑</kbd><kbd class="tecla">↓</kbd> abren los paneles<br>
   <kbd class="tecla">?</kbd> abre el tutorial
 </p>
 </nav>
@@ -1325,8 +1340,9 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   <div id="sliders"></div>
   <p class="muted" id="dimInfo"></p>
 
-  <div class="panel" style="margin-top:1em">
-    <b>Trazado del pincel</b>
+  <details class="plegable" style="margin-top:1em">
+    <summary>Trazado del pincel <span class="pista">Alt+Enter</span></summary>
+    <div class="cuerpo">
         <div class="slider"><div class="head"><span>Suavizado (blur)</span><b id="v_blur"></b></div>
       <input type="range" id="r_blur" min="0" max="6" step="0.1" value="0.5">
       <div class="meter"><i id="m_blur"></i></div></div>
@@ -1347,16 +1363,19 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
       <button class="btn" id="retraceBtn">↻ Re-trazar último render</button>
     </div>
     <p class="muted" id="traceInfo" style="font-size:.85em"></p>
-  </div>
+    </div>
+  </details>
 
-  <div class="panel" style="margin-top:1em">
-    <b>Comparar tamaños</b>
-        <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
+  <details class="plegable" style="margin-top:1em">
+    <summary>Comparar tamaños <span class="pista">Alt+Enter</span></summary>
+    <div class="cuerpo">
+      <div class="row" style="gap:.4em;margin-bottom:.6em;align-items:center">
       <button class="btn sec" id="cmpAdd">Añadir actual</button>
       <label>Base <select id="cmpBase"></select></label>
     </div>
     <div id="cmpChips"></div>
-  </div>
+    </div>
+  </details>
 </div>
 </div>
 </section>
@@ -1464,19 +1483,16 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <h2>Inicio <span class="muted" id="impModo" style="font-size:.75em;font-weight:400"></span></h2>
 
 <div class="hero">
-  <h2>Traé tu rejilla de glifos</h2>
-  <p>Elegí el archivo que exportaste de tu programa de diseño. Fontiador lo traza,
-     arma los glifos y reconstruye la fuente.</p>
   <div id="impZona" tabindex="0" role="button" aria-label="Elegir archivo para importar">
     <span class="grande">Elegir archivo…</span>
     <span class="chico">PNG, JPG, SVG o la exportación JSON de glifos · se pueden elegir varios</span>
   </div>
-  <div class="acciones" style="margin-top:.9em">
+  <div class="acciones" style="margin-top:.8em">
     <button class="btn sec" id="impRescan">Re-escanear inbox</button>
     <button class="btn sec" id="impRefresh">↻ Actualizar</button>
     <button class="btn sec" id="impTutorial">Ver el tutorial</button>
   </div>
-  <p class="muted" id="impPickHint" style="margin:.8em 0 0"></p>
+  <p class="muted" id="impPickHint" style="margin:.7em 0 0"></p>
   <div id="impResultado"></div>
 </div>
 
@@ -1489,29 +1505,48 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
   <button class="acceso" data-ir="log"><b>Registro</b><span>Qué pasó y qué falló</span></button>
 </div>
 
-<div class="panel" style="margin-top:1.2em">
-  <p style="margin-top:0"><b>Formato que espera la app</b></p>
-  <div id="impFormato" class="muted">Cargando…</div>
-  <p style="margin-bottom:.4em;margin-top:.8em">
-    <a class="btn" href="/api/import/plantilla.svg" download="fontiador-plantilla.svg"
-       style="text-decoration:none;display:inline-block">Descargar plantilla (SVG)</a>
-    <a class="btn sec" href="/api/import/plantilla.png" download="fontiador-plantilla.png"
-       style="text-decoration:none;display:inline-block;margin-left:.4em">Versión PNG</a>
+<details class="plegable">
+  <summary>Formato de la rejilla <span class="muted" style="font-weight:400">10 columnas de 1000 px</span> <span class="pista">Alt+Enter</span></summary>
+  <div class="cuerpo">
+    <div id="impFormato" class="muted">Cargando…</div>
+    <p style="margin-bottom:0;margin-top:.8em">
+      <a class="btn" href="/api/import/plantilla.svg" download="fontiador-plantilla.svg"
+         style="text-decoration:none;display:inline-block">Descargar plantilla (SVG)</a>
+      <a class="btn sec" href="/api/import/plantilla.png" download="fontiador-plantilla.png"
+         style="text-decoration:none;display:inline-block;margin-left:.4em">Versión PNG</a>
+    </p>
+  </div>
+</details>
+
+<div class="panel" style="margin-top:.7em">
+  <p style="margin-top:0"><b>Versión <span id="verActual">…</span></b>
+     <span class="muted" id="updEstado" style="margin-left:.5em">Todavía no se comprobó si hay actualizaciones.</span></p>
+  <p style="margin:0">
+    <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
+    <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
+       style="text-decoration:none;display:none;margin-left:.4em">Abrir la descarga</a>
   </p>
-    <details style="margin-top:.6em">
-    <summary style="cursor:pointer">Ver la correspondencia de cada celda</summary>
-    <div id="impOrden" style="max-height:320px;overflow:auto;margin-top:.6em"></div>
+  <details id="updNotas" style="display:none;margin-top:.6em">
+    <summary style="cursor:pointer">Ver qué cambió en la versión nueva</summary>
+    <pre id="updNotasTxt" style="max-height:200px"></pre>
   </details>
 </div>
 
-<div class="panel">
-  <p style="margin-top:0"><b>Carpetas vigiladas</b></p>
-  <div id="impCarpetas" class="muted">Cargando…</div>
-  <p style="margin-bottom:0;margin-top:.8em">
-    <button class="btn sec" id="impClearErr">Vaciar errores</button>
-    <button class="btn sec" id="impClearProc" style="margin-left:.4em">Vaciar procesados</button>
-  </p>
-</div>
+<details class="plegable">
+  <summary>Correspondencia de cada celda <span class="pista">Alt+Enter</span></summary>
+  <div class="cuerpo"><div id="impOrden" style="max-height:280px;overflow:auto"></div></div>
+</details>
+
+<details class="plegable">
+  <summary>Carpetas vigiladas <span class="pista">Alt+Enter</span></summary>
+  <div class="cuerpo">
+    <div id="impCarpetas" class="muted">Cargando…</div>
+    <p style="margin-bottom:0;margin-top:.8em">
+      <button class="btn sec" id="impClearErr">Vaciar errores</button>
+      <button class="btn sec" id="impClearProc" style="margin-left:.4em">Vaciar procesados</button>
+    </p>
+  </div>
+</details>
 </section>
 
 <section id="tab-words">
@@ -1564,22 +1599,9 @@ kbd.tecla{background:#111;border:1px solid #4a4a4a;border-bottom-width:2px;borde
 <label class="chk"><input type="checkbox" id="cs_lower"> Minúsculas</label>
 <label class="chk"><input type="checkbox" id="cs_digits"> Números</label>
 <label class="chk"><input type="checkbox" id="cs_punct"> Puntuación</label>
-<p style="margin-top:1.2em;border-top:1px solid var(--line);padding-top:1em">
-  <b>Versión <span id="verActual">…</span></b><br>
-  <span class="muted" id="updEstado">Todavía no se comprobó si hay actualizaciones.</span>
-</p>
 <p>
   <button class="btn sec" id="tourReset">↻ Restablecer tutoriales</button>
 </p>
-<p>
-  <button class="btn sec" id="updBuscar">Buscar actualizaciones</button>
-  <a class="btn sec" id="updDescargar" href="#" target="_blank" rel="noopener"
-     style="text-decoration:none;display:none;margin-left:.4em">Abrir la descarga</a>
-</p>
-<details id="updNotas" style="display:none;margin-top:.6em">
-  <summary style="cursor:pointer">Ver qué cambió en la versión nueva</summary>
-  <pre id="updNotasTxt" style="max-height:240px"></pre>
-</details>
 </div>
 </section>
 
@@ -2381,8 +2403,8 @@ function catChars(cat){ return [...S.chars].filter(c => cat === 'todas' ? true :
    Cada sección muestra los suyos arriba, con las teclas dibujadas igual que en
    el menú. Se generan desde acá para no repetir el marcado en el HTML. */
 const ATAJOS = {
-  imp:    [['←','→','recorrer'], ['Ctrl','+','←','→','sección'], ['?','tutorial']],
-  dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Esc','limpiar'], ['?','tutorial']],
+  imp:    [['Alt','+','↑','↓','paneles'], ['?','tutorial']],
+  dim:    [['←','→','↑','↓','recorrer'], ['Shift','+','flecha','multi'], ['Ctrl','+','clic','comparar'], ['Alt','+','Enter','panel'], ['?','tutorial']],
   kern:   [['←','→','recorrer'], ['Shift','+','flecha','rango'], ['Enter','aplicar'], ['Esc','volver'], ['Ctrl','+','Enter','alternar'], ['🔒','fijar'], ['?','tutorial']],
   accent: [['←','→','recorrer'], ['Enter','aplicar'], ['?','tutorial']],
   words:  [['escribir','probar'], ['?','tutorial']],
@@ -3711,16 +3733,17 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
   const inicio = document.querySelector('nav button[data-tab="imp"]');
   if (inicio) inicio.onclick = () => irA('imp');
 
-  /* Moverse entre secciones con Ctrl (o Alt) + flecha, desde cualquier lado.
+  /* Moverse entre secciones con Ctrl (o Alt) + ← →, desde cualquier lado.
      Se usa el modificador para no pisar las flechas, que sirven para moverse
-     dentro de cada sección (la rejilla de caracteres, el asistente de kerning). */
+     dentro de cada sección (la rejilla, el asistente de kerning). Las flechas
+     verticales quedan para los paneles plegables. */
   document.addEventListener('keydown', e => {
     if (!(e.ctrlKey || e.altKey || e.metaKey)) return;
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     if (typeof TOUR !== 'undefined' && TOUR.active) return;   // manda el tutorial
     e.preventDefault();
     const i = orden.indexOf(seccionActual());
-    let paso = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+    const paso = e.key === 'ArrowRight' ? 1 : -1;
     irA(orden[(i + paso + orden.length) % orden.length]);
   });
 
@@ -3732,6 +3755,52 @@ if ($('tourReset')) $('tourReset').onclick = tourReset;
     if (typeof TOUR !== 'undefined' && TOUR.active) return;
     e.preventDefault();
     if (typeof tourReplay === 'function') tourReplay();
+  });
+
+  /* Paneles plegables: Ctrl+↑ y Ctrl+↓ pasan de uno a otro y los abren o
+     cierran. Alt+Enter hace lo mismo con el primero de la sección. */
+  const plegables = () => Array.prototype.slice.call(
+    document.querySelectorAll('section.active details.plegable'));
+  const irAPlegable = (paso) => {
+    const lista = plegables();
+    if (!lista.length) return;
+    const actual = lista.indexOf(document.activeElement);
+    let i;
+    if (actual < 0){
+      i = paso > 0 ? 0 : lista.length - 1;
+    } else if (paso > 0){
+      i = Math.min(actual + 1, lista.length - 1);
+    } else {
+      i = Math.max(actual - 1, 0);
+    }
+    const d = lista[i];
+    d.open = true;                       // se abre al llegar, para ver qué hay
+    d.setAttribute('tabindex', '-1');
+    d.focus();
+    d.scrollIntoView({ block: 'nearest' });
+  };
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.altKey)) return;
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    if (typeof TOUR !== 'undefined' && TOUR.active) return;
+    e.preventDefault();
+    irAPlegable(e.key === 'ArrowDown' ? 1 : -1);
+  });
+  document.addEventListener('keydown', e => {
+    if (!e.altKey || e.key !== 'Enter') return;
+    if (typeof TOUR !== 'undefined' && TOUR.active) return;
+    const enfocado = document.activeElement;
+    if (enfocado && enfocado.tagName === 'DETAILS' && enfocado.classList.contains('plegable')){
+      enfocado.open = !enfocado.open;
+    } else {
+      const primero = plegables()[0];
+      if (primero){
+        primero.open = !primero.open;
+        primero.setAttribute('tabindex', '-1');
+        primero.focus();
+      }
+    }
+    e.preventDefault();
   });
 
   /* Los accesos de Inicio también responden a Enter y a la barra espaciadora. */

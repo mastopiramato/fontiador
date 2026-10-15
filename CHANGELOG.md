@@ -4,6 +4,27 @@ Todas las versiones notables del proyecto. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado es
 [SemVer](https://semver.org/lang/es/).
 
+﻿## [0.2.4] — 2026-10-16
+
+### Cambiado
+
+- **Ninguna sección necesita scroll.** Los bloques que no se usan todo el tiempo
+  ahora son **paneles plegables**, cerrados por defecto: *Trazado del pincel* y
+  *Comparar tamaños* en Dimensiones, y *Formato de la rejilla*,
+  *Correspondencia de cada celda* y *Carpetas vigiladas* en Inicio.
+  En una ventana de 1280x800 las siete secciones entran sin barra de scroll.
+- **Buscar actualizaciones** pasó de *Fuente* a *Inicio*, junto a la versión.
+  Fuente quedó solo con lo que se usa al construir.
+- El encabezado de Inicio es más directo: la zona para elegir el archivo primero,
+  sin el párrafo introductorio.
+
+### Añadido
+
+- Atajos para los paneles: **Alt+↑ / Alt+↓** pasa de uno a otro y lo abre,
+  **Alt+Enter** abre o cierra el primero de la sección. Las flechas verticales
+  con modificador ya no cambian de sección: para eso están **Ctrl+← / Ctrl+→**,
+  que evita el choque entre ambos.
+
 ## [0.2.3] — 2026-10-16
 
 ### Cambiado
