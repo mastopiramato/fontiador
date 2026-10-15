@@ -88,18 +88,36 @@ fi
 # ------------------------------------------------------------------ .rpm
 if command -v rpmbuild >/dev/null 2>&1; then
   TOP="$RAIZ/build/rpm"
+  # Se prepara todo en una carpeta aparte y NO en %{buildroot}: rpmbuild ya crea
+  # su propio buildroot por version, y si se copia desde adentro de el mismo,
+  # falla con "cannot copy a directory into itself".
+  ORIGEN="$TOP/origen"
   rm -rf "$TOP"
-  mkdir -p "$TOP"/{BUILD,RPMS,SOURCES,SPECS,SRPMS} \
-           "$TOP/BUILDROOT/opt/$NOMBRE"
+  mkdir -p "$TOP"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+  mkdir -p "$ORIGEN/opt/$NOMBRE" \
+           "$ORIGEN/usr/bin" \
+           "$ORIGEN/usr/share/applications" \
+           "$ORIGEN/usr/share/icons/hicolor/256x256/apps"
 
-  mkdir -p "$TOP/BUILDROOT/opt/$NOMBRE" \
-           "$TOP/BUILDROOT/usr/bin" \
-           "$TOP/BUILDROOT/usr/share/applications" \
-           "$TOP/BUILDROOT/usr/share/icons/hicolor/256x256/apps"
-  cp -r "$APP/." "$TOP/BUILDROOT/opt/$NOMBRE/"
-  cp "$RAIZ/packaging/icons/fontiador.png" "$TOP/BUILDROOT/usr/share/icons/hicolor/256x256/apps/fontiador.png"
-  cp "$STAGE/usr/bin/$NOMBRE" "$TOP/BUILDROOT/usr/bin/$NOMBRE" 2>/dev/null || true
-  cp "$STAGE/usr/share/applications/fontiador.desktop" "$TOP/BUILDROOT/usr/share/applications/" 2>/dev/null || true
+  cp -r "$APP/." "$ORIGEN/opt/$NOMBRE/"
+  cp "$RAIZ/packaging/icons/fontiador.png" "$ORIGEN/usr/share/icons/hicolor/256x256/apps/fontiador.png"
+
+  # El lanzador y el acceso directo se reutilizan de lo que armó el .deb; si no
+  # se generó, se escriben igual.
+  if [ -f "$STAGE/usr/bin/$NOMBRE" ]; then
+    cp "$STAGE/usr/bin/$NOMBRE" "$ORIGEN/usr/bin/$NOMBRE"
+  else
+    cat > "$ORIGEN/usr/bin/$NOMBRE" <<EOF
+#!/bin/sh
+export FONTIADOR_DATA_DIR="\${FONTIADOR_DATA_DIR:-\$HOME/.local/share/Fontiador}"
+mkdir -p "\$FONTIADOR_DATA_DIR"
+exec /opt/$NOMBRE/Fontiador "\$@"
+EOF
+    chmod 755 "$ORIGEN/usr/bin/$NOMBRE"
+  fi
+  if [ -f "$STAGE/usr/share/applications/fontiador.desktop" ]; then
+    cp "$STAGE/usr/share/applications/fontiador.desktop" "$ORIGEN/usr/share/applications/"
+  fi
 
   cat > "$TOP/SPECS/$NOMBRE.spec" <<EOF
 Name:           $NOMBRE
@@ -117,7 +135,7 @@ OpenType, con herramientas para dimensiones, kerning, tildes y conjuntos.
 
 %install
 mkdir -p %{buildroot}
-cp -r $TOP/BUILDROOT/* %{buildroot}/
+cp -r $ORIGEN/. %{buildroot}/
 
 %files
 /opt/$NOMBRE

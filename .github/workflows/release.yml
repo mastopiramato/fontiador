@@ -113,7 +113,10 @@ jobs:
   publicar:
     name: Publicar la version
     needs: [windows, linux]
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Se publica cuando el disparo viene de una etiqueta, y también al lanzarlo a
+    # mano indicando una etiqueta que ya exista (así se pueden agregar los
+    # paquetes de Linux a una versión publicada sin volver a etiquetar).
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -122,6 +125,21 @@ jobs:
         with:
           path: artefactos
 
+      - name: Resolver la etiqueta
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Lanzado a mano: se publica sobre la etiqueta que corresponde a la
+            # version del código, que ya tiene que existir.
+            VERSION="$(sed -n 's/^APP_VERSION *= *"\([^"]*\)".*/\1/p' fontiador_server.py | head -1)"
+            TAG="v$VERSION"
+            echo "Lanzado a mano: se publica sobre la etiqueta $TAG"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Etiqueta de destino: $TAG"
+
       - name: Calcular sumas de verificacion
         run: |
           cd artefactos
@@ -129,13 +147,13 @@ jobs:
             -exec sha256sum {} \; | sed 's|  \./|  |' > SHA256SUMS
           cat SHA256SUMS
 
-      # El tag ya tiene una release publicada (la de Windows), asi que este paso
-      # tiene que ACTUALIZARLA, no crear una nueva: GitHub rechaza dos releases
-      # sobre el mismo tag. Y no se regeneran las notas, para no pisar las que
-      # ya estan escritas.
+      # La etiqueta ya tiene una release publicada, así que este paso tiene que
+      # ACTUALIZARLA y no crear otra: GitHub rechaza dos releases sobre la misma
+      # etiqueta. Y no se regeneran las notas, para no pisar las ya escritas.
       - name: Publicar la version
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
           files: |
             artefactos/**/*.exe
             artefactos/**/*.AppImage
