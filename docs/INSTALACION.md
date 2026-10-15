@@ -89,6 +89,14 @@ Si hace falta recompilar una versión ya publicada sin volver a etiquetar,
 se puede lanzar el flujo a mano (`workflow_dispatch`): toma la etiqueta a partir
 de `APP_VERSION` y actualiza esa release en lugar de crear otra.
 
+> **El repositorio tiene que ser público.** Si se pasa a privado, GitHub deja de
+> servir las descargas (`releases/latest/download/...` devuelve 404), apaga
+> GitHub Pages y el botón *Buscar actualizaciones* de la app deja de funcionar,
+> porque consulta la API sin credenciales. Los archivos siguen ahí y la API los
+> muestra si estás autenticado, así que el problema no se nota desde tu sesión:
+> conviene comprobar una descarga en una ventana de incógnito después de cada
+> publicación.
+
 Conviene borrar las releases viejas cuando quedan obsoletas, para que nadie baje
 por error un paquete con errores. Las etiquetas se pueden dejar.
 
